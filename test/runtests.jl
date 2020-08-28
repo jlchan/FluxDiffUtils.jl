@@ -5,16 +5,20 @@ using StaticArrays
 using LinearAlgebra
 using ForwardDiff
 
+# make 2-field solution
+U = SVector(collect(LinRange(-1,1,10)),collect(LinRange(-1,1,10)))
+
+# define flux function and its derivative
 function flux_function(UL,UR)
     uL,vL = UL
     uR,vR = UR
     return SVector{2}(.5*(uL+uR),.5*(vL+vR))
 end
 df(UL,UR) = ForwardDiff.jacobian(UR->flux_function(UL,UR), UR)
-U = SVector(collect(LinRange(-1,1,10)),collect(LinRange(-1,1,10))) # make 2-field solution
 
+# for banded diagonal matrix test
 g(U) = SMatrix{2,2}([U[1] 0
-                    0 U[2]]) # for banded diagonal matrix test
+                    0 U[2]])
 
 @testset "Sparse Jacobian tests" begin
 
@@ -32,4 +36,5 @@ g(U) = SMatrix{2,2}([U[1] 0
 
     G = banded_matrix_function(g,U)
     @test G ≈ blockdiag(spdiagm(0=>U[1]),spdiagm(0=>U[2]))
+
 end
