@@ -1,6 +1,6 @@
 # ExplicitFluxDiffJacobians
 
-Explicit Jacobian computations for flux differencing type discretizations. 
+Explicit Jacobian computations for flux differencing type discretizations. Code based on this [preprint](https://arxiv.org/abs/2006.07504).
 
 [![Build Status](https://travis-ci.com/jlchan/ExplicitFluxDiffJacobians.jl.svg?branch=master)](https://travis-ci.com/jlchan/ExplicitFluxDiffJacobians.jl)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/jlchan/ExplicitFluxDiffJacobians.jl?svg=true)](https://ci.appveyor.com/project/jlchan/ExplicitFluxDiffJacobians-jl)
