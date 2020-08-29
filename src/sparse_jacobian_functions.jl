@@ -20,33 +20,33 @@ function hadamard_jacobian(Q::SparseMatrixCSC, dF::Fxn,
     return A
 end
 
-"
-function hadamard_scale!(A::SparseMatrixCSC, Q::SparseMatrixCSC, F::Fxn,
-                        U, Fargs ...)
-
-computes the matrix A_ij = Q_ij * F(u_i,u_j)
-if you add extra args, they are passed to F(ux,uy) via F(u_i,u_j,args_i,args_j)
-"
-function hadamard_scale!(A::SparseMatrixCSC, Q::SparseMatrixCSC, F::Fxn,
-                        U, Fargs ...) where Fxn
-
-    Nfields = length(U)
-    num_pts = size(Q,1)
-    ids(m) = (1:num_pts) .+ (m-1)*num_pts
-    Block(m,n) = CartesianIndices((ids(m),ids(n)))
-
-    # loop over non-zero indices in Q
-    Qnz = zip(findnz(Q)...)
-    for (i,j,Qij) in Qnz
-        Ui = getindex.(U,i)
-        Uj = getindex.(U,j)
-
-        Fij = F(Ui,Uj,getindex.(Fargs,i)...,getindex.(Fargs,j)...)
-        for n = 1:length(U), m=1:length(U)
-            A[Block(m,n)[i,j]] += Fij[m,n]*Qij
-        end
-    end
-end
+# "
+# function hadamard_scale!(A::SparseMatrixCSC, Q::SparseMatrixCSC, F::Fxn,
+#                         U, Fargs ...)
+#
+# computes the matrix A_ij = Q_ij * F(u_i,u_j)
+# if you add extra args, they are passed to F(ux,uy) via F(u_i,u_j,args_i,args_j)
+# "
+# function hadamard_scale!(A::SparseMatrixCSC, Q::SparseMatrixCSC, F::Fxn,
+#                         U, Fargs ...) where Fxn
+#
+#     Nfields = length(U)
+#     num_pts = size(Q,1)
+#     ids(m) = (1:num_pts) .+ (m-1)*num_pts
+#     Block(m,n) = CartesianIndices((ids(m),ids(n)))
+#
+#     # loop over non-zero indices in Q
+#     Qnz = zip(findnz(Q)...)
+#     for (i,j,Qij) in Qnz
+#         Ui = getindex.(U,i)
+#         Uj = getindex.(U,j)
+#
+#         Fij = F(Ui,Uj,getindex.(Fargs,i)...,getindex.(Fargs,j)...)
+#         for n = 1:length(U), m=1:length(U)
+#             A[Block(m,n)[i,j]] += Fij[m,n]*Qij
+#         end
+#     end
+# end
 
 "
 function accum_hadamard_jacobian!(A, Q, dF::Fxn, U, Fargs ...; scale = -1)
@@ -106,12 +106,6 @@ function banded_matrix_function(mat_fun::Fxn, U, Fargs ...) where Fxn
     Block(m,n) = CartesianIndices((ids(m),ids(n)))
 
     banded_matrix_function!(A, mat_fun, U, Fargs...)
-    # for i = 1:num_pts
-    #     mat_i = mat_fun(getindex.(U,i),getindex.(Fargs,i)...)
-    #     for n = 1:Nfields, m = 1:Nfields
-    #         A[Block(m,n)[i,i]] = mat_i[m,n] # TODO: replace with fast sparse constructor
-    #     end
-    # end
     return A
 end
 
@@ -157,7 +151,6 @@ function hadamard_sum!(rhs, ATr::SparseMatrixCSC, F::Fxn,
                         u,Fargs ...) where Fxn
 
 computes ∑ A_ij * F(u_i,u_j) = (A∘F)*1 for flux differencing
-separate code from hadamard_scale!, since it's non-allocating
 "
 function hadamard_sum!(rhs, ATr::SparseMatrixCSC, F::Fxn,
                         u,Fargs ...) where Fxn
