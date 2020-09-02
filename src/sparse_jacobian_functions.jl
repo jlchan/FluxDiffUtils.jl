@@ -139,9 +139,10 @@ computes sum(A.*F,dims=2) while exploiting sparsity
 uses ATr for faster col access of sparse CSC matrices
 "
 function hadamard_sum(ATr::SparseMatrixCSC{Tv,Ti},F::Fxn,u,Fargs ...) where {Tv,Ti,Fxn}
-    m, n = size(ATr)
+    # m, n = size(ATr)
     # rhs = [zeros(n) for i in eachindex(u)]
-    rhs = MVector{length(u)}([zeros(Tv,n) for i in eachindex(u)]) # probably faster w/StaticArrays?
+    # rhs = MVector{length(u)}([zeros(Tv,n) for i in eachindex(u)]) # probably faster w/StaticArrays?
+    rhs = zero.(u)
     hadamard_sum!(rhs,ATr,F,u,Fargs...)
     return rhs
 end

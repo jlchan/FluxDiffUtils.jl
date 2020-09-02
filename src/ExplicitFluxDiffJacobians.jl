@@ -9,9 +9,9 @@ F_ij = f(ui,uj), and f(uL,uR) is a symmetric + consistent numerical flux
 module ExplicitFluxDiffJacobians
 
 using LinearAlgebra
-using ForwardDiff
-using StaticArrays
 using SparseArrays
+# using ForwardDiff
+# using StaticArrays
 # using UnPack
 
 # export columnize
