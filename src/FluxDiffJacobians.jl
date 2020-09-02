@@ -1,12 +1,12 @@
 """
-Module ExplicitFluxDiffJacobians
+Module FluxDiffJacobians
 
 Computes explicit Jacobians for discretizations which utilize
 flux differencing, e.g., can be cast as sum(Q.*F,dims=2), where
 F_ij = f(ui,uj), and f(uL,uR) is a symmetric + consistent numerical flux
 """
 
-module ExplicitFluxDiffJacobians
+module FluxDiffJacobians
 
 using LinearAlgebra
 using SparseArrays

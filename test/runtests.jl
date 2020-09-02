@@ -1,6 +1,7 @@
-using ExplicitFluxDiffJacobians
+using FluxDiffJacobians
 using Test
 using SparseArrays
+
 using StaticArrays
 using LinearAlgebra
 using ForwardDiff
