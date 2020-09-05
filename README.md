@@ -8,4 +8,5 @@ Utilities for flux differencing, as well as Jacobian computations for flux diffe
 
 Conventions:
 - Assumes non-grouped arguments for both fluxes and derivatives (e.g., FluxDiffUtils expects fluxes of the form `f(u1,u2,v1,v2)` instead of `f(U=(u1,u2),V=(v1,v2))`)
+- Assumes the number of outputs from the flux matches the number of operators passed in (e.g., if `f(uL,vL)` has 2 outputs `g,h`, you should provide matrices `(A1, A2)` which will then compute `sum(A1.*g + A2.*h, dims = 2)`)
 - Jacobians are returned in block form as tuples of tuples (some assembly required). Number of blocks per dimension is determined by length of input `U = (u1,...,u_Nfields)`
