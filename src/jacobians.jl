@@ -1,22 +1,15 @@
 ## sparse hadamard function matrix utilities
 
-"
-function hadamard_jacobian(Q::SparseMatrixCSC, dF::Fxn,
-                           U, Fargs ...; scale = -1)
-
-Assumes that Q/F is a skew-symmetric/symmetric pair
-Can only deal with one coordinate component at a time in higher dimensions.
-"
-function hadamard_jacobian(A_template_list::NTuple{N,SparseMatrixCSC}, dF::Fxn,
+# dispatches for both dense/sparse
+function hadamard_jacobian(A_template_list::NTuple{N,AbstractArray}, dF::Fxn,
                            U, Fargs...; scale = -1) where {N,Fxn}
     Nfields = length(U)
-    n = size(first(A_template_list),2)
-    A = ntuple(x->ntuple(x->spzeros(n,n),Nfields),Nfields)
+    A = ntuple(x->ntuple(x->zero.(first(A_template_list)),Nfields),Nfields)
     hadamard_jacobian!(A,A_template_list, dF, U, Fargs ...; scale = scale)
-    # accum_hadamard_jacobian!(A,A_template,dF,U,Fargs...; scale=scale)
     return A
 end
 
+# sparse version
 function hadamard_jacobian!(A::NTuple{N,NTuple{N,SparseMatrixCSC}},
                             A_template_list::NTuple{N,SparseMatrixCSC},
                             dF::Fxn, U, Fargs ...; scale = -1) where {N,Fxn}
@@ -33,6 +26,40 @@ function hadamard_jacobian!(A::NTuple{N,NTuple{N,SparseMatrixCSC}},
        Uj = getindex.(U,j)
        fill!(dFaccum,zero(eltype(first(A_template_list))))
        for i in union(getindex.(rows,nzrange.(A_template_list, j))...)
+           Ui = getindex.(U,i)
+           A_ij_list = getindex.(A_template_list,i,j)
+           dFij = dF(Ui...,getindex.(Fargs,i)...,
+                     Uj...,getindex.(Fargs,j)...)
+
+           for n = 1:length(U), m=1:length(U)
+               dFijQ = sum(getindex.(dFij,m,n) .* A_ij_list) # sum result for multiple operators
+               A[m][n][i,j] += dFijQ
+               dFaccum[m,n] += dFijQ # accumulate column sums on-the-fly
+           end
+       end
+
+       # add diagonal entry for each block
+       for n=1:Nfields, m=1:Nfields
+           A[m][n][j,j] += scale*dFaccum[m,n]
+       end
+    end
+end
+
+# dense version
+function hadamard_jacobian!(A::NTuple{N,NTuple{N,Array{T,2}}},
+                            A_template_list::NTuple{N,Array{T,2}},
+                            dF::Fxn, U, Fargs ...; scale = -1) where {N,T,Fxn}
+    Nfields = length(U)
+    num_pts = size(first(A_template_list),1)
+
+    # accumulator for sum(Q.*dF,1) over jth column
+    dFaccum = zeros(eltype(first(A_template_list)),Nfields,Nfields)
+
+    # loop over cols + non-zero ids
+    for j = 1:num_pts
+       Uj = getindex.(U,j)
+       fill!(dFaccum,zero(eltype(first(A_template_list))))
+       for i = 1:num_pts
            Ui = getindex.(U,i)
            A_ij_list = getindex.(A_template_list,i,j)
            dFij = dF(Ui...,getindex.(Fargs,i)...,
