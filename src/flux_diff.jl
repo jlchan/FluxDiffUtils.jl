@@ -2,33 +2,25 @@
 unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
 bmult(a,b) = a.*b # broadcasted multiplication
 
-# scalar ATr - dispatch to both sparse/dense
-function hadamard_sum(ATr::AbstractArray{T,2}, F::Fxn, u, Fargs...) where {T,Fxn}
-    return hadamard_sum(tuple(ATr),F,u,Fargs...)
-end
-function hadamard_sum!(rhs,ATr::AbstractArray{T,2}, F::Fxn, u, Fargs...) where {T,Fxn}
-    return hadamard_sum(rhs,tuple(ATr),F,u,Fargs...)
-end
-
-# dispatch to both dense/sparse
-function hadamard_sum(ATr::NTuple{N,T}, F::Fxn, u, Fargs...) where {N,T,Fxn}
+# tuple ATr_list dispatch to both dense/sparse
+function hadamard_sum(ATr_list::NTuple{N,T}, F::Fxn, u, Fargs...) where {N,T,Fxn}
     rhs = zero.(u)
-    hadamard_sum!(rhs,ATr,F,u,Fargs...)
+    hadamard_sum!(rhs,ATr_list,F,u,Fargs...)
     return rhs
 end
 
 "function hadamard_sum!(rhs, ATr::NTuple{N,Array{T,2}}, F, u, Fargs...) where {N,T}
     general function for dense operators"
-function hadamard_sum!(rhs, ATr::NTuple{N,Array{T,2}},
+function hadamard_sum!(rhs, ATr_list::NTuple{N,Array{T,2}},
                        F, u, Fargs...) where {N,T}
-    n = size(first(ATr),2)
+    n = size(first(ATr_list),2)
     val_i = zeros(eltype(first(rhs)),length(rhs))
     for i = 1:n
         ui = getindex.(u,i)
         fill!(val_i,zero(eltype(first(rhs))))
         for j = 1:n
             uj = getindex.(u,j)
-            ATrij = getindex.(ATr,j,i)
+            ATrij = getindex.(ATr_list,j,i)
             Fij = F(ui...,getindex.(Fargs,i)...,uj...,getindex.(Fargs,j)...)
             val_i .+= sum.(bmult.(ATrij,Fij))
         end

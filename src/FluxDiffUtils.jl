@@ -19,7 +19,21 @@ export hadamard_jacobian # add hadamard_jacobian! in next version
 export banded_matrix_function, banded_matrix_function!
 export accum_hadamard_jacobian! # TODO: remove in next version
 
-include("flux_diff.jl") # new interfaces
-include("jacobians.jl") # TODO: update API
+#####
+##### single-operator dispatch functions
+#####
+function hadamard_sum(ATr::AbstractArray, F::Fxn, u, Fargs...) where Fxn
+    return hadamard_sum(tuple(ATr),F,u,Fargs...)
+end
+function hadamard_sum!(rhs,ATr::AbstractArray, F::Fxn, u, Fargs...) where Fxn
+    return hadamard_sum(rhs,tuple(ATr),F,u,Fargs...)
+end
+function hadamard_jacobian(A_template::SparseMatrixCSC, dF::Fxn,
+                           U, Fargs...; scale = -1) where Fxn
+    return hadamard_jacobian(tuple(A_template), dF, U, Fargs...; scale = scale)
+end
+
+include("flux_diff.jl")
+include("jacobians.jl")
 
 end

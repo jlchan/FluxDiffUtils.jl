@@ -73,7 +73,7 @@ computes a block-banded matrix whose bands are entries of matrix-valued
 function evals (e.g., a Jacobian function) - mutating version.
 "
 function banded_matrix_function!(A::NTuple{N,NTuple{N,AbstractArray}},
-                                mat_fun::Fxn, U, Fargs ...) where {N,Fxn}
+                                 mat_fun::Fxn, U, Fargs ...) where {N,Fxn}
     Nfields = length(U)
     num_pts = length(first(U))
 
