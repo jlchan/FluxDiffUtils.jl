@@ -1,7 +1,7 @@
 using FluxDiffUtils
 using Test
-using SparseArrays
 
+using SparseArrays
 using StaticArrays
 using LinearAlgebra
 using ForwardDiff
@@ -27,8 +27,8 @@ g(u,v) = SMatrix{2,2}([u 0
 
 A = randn(10,10)
 A = ntuple(x->A,2)
-A = (A->A+A').(A) # make skew
-ATr = (A->Matrix(A')).(A)
+A = (A->A-A').(A) # make skew for exact formula testing
+ATr = (A->Matrix(transpose(A))).(A)
 
 @testset "Flux diff tests" begin
 
@@ -45,22 +45,20 @@ end
 
     Jdense = hadamard_jacobian(A,df,U)
     J = hadamard_jacobian(sparse.(A),df,U)
-    # no factor of .5 since Alist = (A,A)
-    @test J[1][1] ≈ first(A) - diagm(vec(sum(first(A),dims=2)))
-    @test J[2][2] ≈ first(A) - diagm(vec(sum(first(A),dims=2)))
+    # no factor of .5 since Alist = (A,A) so exact jac is A - diag(sum(A,2))
+    @test J[1][1] ≈ first(A) - diagm(vec(sum(first(A),dims=1)))
+    @test J[2][2] ≈ first(A) - diagm(vec(sum(first(A),dims=1)))
     @test norm(J[1][2]) + norm(J[2][1]) < tol
     for i=1:2,j=1:2
         @test J[i][j] ≈ sparse(Jdense[i][j])
     end
-
-    # Jexplicit = blockdiag(A,A)
-    # @test J ≈ .5*(Jexplicit + diagm(vec(sum(Jexplicit,dims=2)))) # formula from paper
 
     G = banded_matrix_function(g,U)
     @test G[1][1] ≈ spdiagm(0=>U[1])
     @test norm(G[1][2]) + norm(G[2][1]) < tol
     @test G[2][2] ≈ spdiagm(0=>U[2])
 end
+
 # @testset "Jacobian tests" begin
 #
 #     # make 2-field solution
