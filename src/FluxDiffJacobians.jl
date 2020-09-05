@@ -11,12 +11,15 @@ module FluxDiffJacobians
 using LinearAlgebra
 using SparseArrays
 
-export hadamard_jacobian #, hadamard_jacobian! to dispatch over tuple args
+export hadamard_jacobian # add hadamard_jacobian! in next version
 export hadamard_sum, hadamard_sum!
 export banded_matrix_function, banded_matrix_function!
 
-export accum_hadamard_jacobian! # TODO: remove
+export accum_hadamard_jacobian! # TODO: remove in next version
 
-include("sparse_jacobian_functions.jl")
+include("flux_diff.jl") # new interfaces
+
+# include("sparse_flux_diff.jl") # TODO: remove in next version
+include("sparse_jacobian_functions.jl") # TODO: update API
 
 end

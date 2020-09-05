@@ -46,7 +46,7 @@ function accum_hadamard_jacobian!(A, Q, dF::Fxn, U, Fargs ...; scale = -1) where
             Qij = vals[id]
             Ui = getindex.(U,i)
 
-            dFij = dF(Ui,Uj,getindex.(Fargs,i)...,getindex.(Fargs,j)...)
+            dFij = dF(Ui,getindex.(Fargs,i)...,Uj,getindex.(Fargs,j)...)
 
             # Aij = A[Block(m,n)]
             for n = 1:length(U), m=1:length(U)
@@ -99,45 +99,5 @@ function banded_matrix_function!(A::SparseMatrixCSC,mat_fun::Fxn, U, Fargs ...) 
         for n = 1:Nfields, m = 1:Nfields
             A[Block(m,n)[i,i]] = mat_i[m,n] # TODO: replace with fast sparse constructor
         end
-    end
-end
-
-# =============== for residual evaluation ================
-
-"
-function hadamard_sum(ATr::SparseMatrixCSC{Tv,Ti},F::Fxn,u,Fargs ...) where {Tv,Ti,Fxn}
-
-computes sum(A.*F,dims=2) while exploiting sparsity
-uses ATr for faster col access of sparse CSC matrices
-"
-function hadamard_sum(ATr::SparseMatrixCSC{Tv,Ti},
-                      F::Fxn,u,Fargs...) where {Tv,Ti,Fxn}
-    rhs = zero.(u)
-    hadamard_sum!(rhs,ATr,F,u,Fargs...)
-    return rhs
-end
-
-"
-function hadamard_sum!(rhs, ATr::SparseMatrixCSC, F::Fxn,
-                        u,Fargs ...) where Fxn
-
-computes ∑ A_ij * F(u_i,u_j) = (A∘F)*1 for flux differencing
-"
-function hadamard_sum!(rhs, ATr::SparseMatrixCSC, F::Fxn,
-                        u,Fargs ...) where Fxn
-    cols = rowvals(ATr)
-    vals = nonzeros(ATr)
-    m, n = size(ATr)
-    val_i = zeros(eltype(first(rhs)),length(rhs))
-    for i = 1:n
-        ui = getindex.(u,i)
-        fill!(val_i,zero(eltype(first(rhs))))
-        for j in nzrange(ATr, i) # column-major: extracts ith col of ATr = ith row of A
-            col = cols[j]
-            Aij = vals[j]
-            uj = getindex.(u,col)
-            val_i .+= Aij * F(ui,uj,getindex.(Fargs,i)...,getindex.(Fargs,col)...)
-        end
-        setindex!.(rhs,val_i,i)
     end
 end
