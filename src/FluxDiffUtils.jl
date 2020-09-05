@@ -6,7 +6,7 @@ flux differencing, e.g., can be cast as sum(Q.*F,dims=2), where
 F_ij = f(ui,uj), and f(uL,uR) is a symmetric + consistent numerical flux
 """
 
-module FluxDiffJacobians
+module FluxDiffUtils
 
 using LinearAlgebra
 using SparseArrays
