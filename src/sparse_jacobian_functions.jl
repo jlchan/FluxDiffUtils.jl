@@ -20,34 +20,6 @@ function hadamard_jacobian(Q::SparseMatrixCSC, dF::Fxn,
     return A
 end
 
-# "
-# function hadamard_scale!(A::SparseMatrixCSC, Q::SparseMatrixCSC, F::Fxn,
-#                         U, Fargs ...)
-#
-# computes the matrix A_ij = Q_ij * F(u_i,u_j)
-# if you add extra args, they are passed to F(ux,uy) via F(u_i,u_j,args_i,args_j)
-# "
-# function hadamard_scale!(A::SparseMatrixCSC, Q::SparseMatrixCSC, F::Fxn,
-#                         U, Fargs ...) where Fxn
-#
-#     Nfields = length(U)
-#     num_pts = size(Q,1)
-#     ids(m) = (1:num_pts) .+ (m-1)*num_pts
-#     Block(m,n) = CartesianIndices((ids(m),ids(n)))
-#
-#     # loop over non-zero indices in Q
-#     Qnz = zip(findnz(Q)...)
-#     for (i,j,Qij) in Qnz
-#         Ui = getindex.(U,i)
-#         Uj = getindex.(U,j)
-#
-#         Fij = F(Ui,Uj,getindex.(Fargs,i)...,getindex.(Fargs,j)...)
-#         for n = 1:length(U), m=1:length(U)
-#             A[Block(m,n)[i,j]] += Fij[m,n]*Qij
-#         end
-#     end
-# end
-
 "
 function accum_hadamard_jacobian!(A, Q, dF::Fxn, U, Fargs ...; scale = -1)
 
@@ -138,10 +110,8 @@ function hadamard_sum(ATr::SparseMatrixCSC{Tv,Ti},F::Fxn,u,Fargs ...) where {Tv,
 computes sum(A.*F,dims=2) while exploiting sparsity
 uses ATr for faster col access of sparse CSC matrices
 "
-function hadamard_sum(ATr::SparseMatrixCSC{Tv,Ti},F::Fxn,u,Fargs ...) where {Tv,Ti,Fxn}
-    # m, n = size(ATr)
-    # rhs = [zeros(n) for i in eachindex(u)]
-    # rhs = MVector{length(u)}([zeros(Tv,n) for i in eachindex(u)]) # probably faster w/StaticArrays?
+function hadamard_sum(ATr::SparseMatrixCSC{Tv,Ti},
+                      F::Fxn,u,Fargs...) where {Tv,Ti,Fxn}
     rhs = zero.(u)
     hadamard_sum!(rhs,ATr,F,u,Fargs...)
     return rhs
@@ -158,15 +128,15 @@ function hadamard_sum!(rhs, ATr::SparseMatrixCSC, F::Fxn,
     cols = rowvals(ATr)
     vals = nonzeros(ATr)
     m, n = size(ATr)
+    val_i = zeros(eltype(first(rhs)),length(rhs))
     for i = 1:n
         ui = getindex.(u,i)
-        val_i = zeros(length(u))
-        #fill!(val_i,0.0)
+        fill!(val_i,zero(eltype(first(rhs))))
         for j in nzrange(ATr, i) # column-major: extracts ith col of ATr = ith row of A
             col = cols[j]
             Aij = vals[j]
             uj = getindex.(u,col)
-            val_i += Aij * F(ui,uj,getindex.(Fargs,i)...,getindex.(Fargs,col)...)
+            val_i .+= Aij * F(ui,uj,getindex.(Fargs,i)...,getindex.(Fargs,col)...)
         end
         setindex!.(rhs,val_i,i)
     end

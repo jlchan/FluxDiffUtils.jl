@@ -10,17 +10,13 @@ module FluxDiffJacobians
 
 using LinearAlgebra
 using SparseArrays
-# using ForwardDiff
-# using StaticArrays
-# using UnPack
 
-# export columnize
-export hadamard_jacobian, accum_hadamard_jacobian!
+export hadamard_jacobian #, hadamard_jacobian! to dispatch over tuple args
 export hadamard_sum, hadamard_sum!
 export banded_matrix_function, banded_matrix_function!
 
-include("sparse_jacobian_functions.jl")
+export accum_hadamard_jacobian! # TODO: remove
 
-## TODO: specialize for dense matrices too
+include("sparse_jacobian_functions.jl")
 
 end

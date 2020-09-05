@@ -4,4 +4,4 @@
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/jlchan/ExplicitFluxDiffJacobians.jl?svg=true)](https://ci.appveyor.com/project/jlchan/ExplicitFluxDiffJacobians-jl)
 [![Codecov](https://codecov.io/gh/jlchan/ExplicitFluxDiffJacobians.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jlchan/ExplicitFluxDiffJacobians.jl)
 
-Explicit Jacobian computations for flux differencing type discretizations. Code based on this [preprint](https://arxiv.org/abs/2006.07504).
+Jacobian computations for flux differencing type discretizations. Code based on this [preprint](https://arxiv.org/abs/2006.07504).
