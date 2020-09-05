@@ -11,9 +11,19 @@ Utilities for flux differencing, as well as Jacobian computations for flux diffe
 using LinearAlgebra
 using FluxDiffUtils
 
-U = (randn(4),randn(4))
-flux(uL,vL,uR,vR) = (.5*(uL+uR), .5*(vL+vR)),(.5*(uL+uR), .5*(vL+vR))
-df(uL,vL,uR,vR) = ([.5 0; 0 .5], [.5 0; 0 .5]) # jacobians w.r.t. uR,vR
+# make 3-field solution
+u = collect(LinRange(-1,1,4))
+U = (u,u,u)
+
+function flux(uL,vL,wL,uR,vR,wR)
+    avg(x,y) = @. .5*(x+y)
+    Fx = avg(uL,uR),avg(vL,vR),avg(wL,wR)
+    Fy = avg(uL,uR),avg(vL,vR),avg(wL,wR)
+    return Fx,Fy
+end
+
+# jacobians w.r.t. (uR,vR)
+df(uL,vL,uR,vR) = ([.5 0 0; 0 .5 0; 0 0 .5], [.5 0 0; 0 .5 0; 0 0 .5])
 A_list = (A->A+A').(ntuple(x->randn(4,4),2)) # make symmetric to check formula
 
 # hadamard_sum uses transpose for efficiency

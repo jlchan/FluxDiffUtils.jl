@@ -1,4 +1,51 @@
-## sparse hadamard function matrix utilities
+# helper functions
+bmult(a,b) = a.*b # broadcasted multiplication
+unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
+
+# unzip for tuple - a little hacky
+unzipsum(a::AbstractArray) = sum(a)
+unzipsum(a::Tuple) = sum.(unzip(a))
+
+# sparse hadamard function matrix utilities
+row_range(j,A_list::NTuple{N,AbstractArray}) where N = axes(first(A_list),1)
+row_range(j,A_list::NTuple{N,SparseMatrixCSC}) where N =
+    union(getindex.(rowvals.(A_list),nzrange.(A_list, j))...)
+
+#####
+##### routine works for both dense/sparse matrix routines
+#####
+
+# tuple ATr_list dispatch to both dense/sparse
+function hadamard_sum(ATr_list::NTuple{N,T}, F::Fxn, u, Fargs...) where {N,T,Fxn}
+    rhs = zero.(u)
+    hadamard_sum!(rhs,ATr_list,F,u,Fargs...)
+    return rhs
+end
+
+"function hadamard_sum!(rhs, ATr_list::NTuple{N,AbstractArray{T,2}}, F::Fxn,
+                        u, Fargs...) where {N,T,Fxn}"
+function hadamard_sum!(rhs, ATr_list::NTuple{N,AbstractArray{T,2}}, F::Fxn,
+                        u, Fargs...) where {N,T,Fxn}
+    # cols = rowvals.(ATr_list)
+    val_i = zeros(eltype(first(rhs)),length(rhs))
+    for i = 1:size(first(ATr_list),2) # all ops should be same length
+        ui = getindex.(u,i)
+        fill!(val_i,zero(eltype(first(rhs))))
+
+        # loop over nonzero inds for all matrices in ATr_list (dispatched)
+        for j in row_range(i,ATr_list)
+            uj = getindex.(u,j)
+            ATrij_list = getindex.(ATr_list,j,i)
+            Fij = F(ui...,getindex.(Fargs,i)...,uj...,getindex.(Fargs,j)...)
+            val_i .+= unzipsum(bmult.(ATrij_list,Fij))
+        end
+        setindex!.(rhs,val_i,i)
+    end
+end
+
+#####
+##### Jacobian functions
+#####
 
 # top-level dispatch based on matrix information - :sym,:skew
 function scale_factor(matrix_type::Symbol)
@@ -31,10 +78,6 @@ function hadamard_jacobian(A_template_list::NTuple{N,AbstractArray},
     hadamard_jacobian!(A,A_template_list, matrix_type, dF, U, Fargs...)
     return A
 end
-
-row_range(j,A_list::NTuple{N,AbstractArray}) where N = axes(first(A_list),1)
-row_range(j,A_list::NTuple{N,SparseMatrixCSC}) where N =
-    union(getindex.(rowvals.(A_list),nzrange.(A_list, j))...)
 
 # handles both dense/sparse matrices
 function hadamard_jacobian!(A::NTuple{N,NTuple{N,AbstractArray}},
@@ -69,6 +112,10 @@ function hadamard_jacobian!(A::NTuple{N,NTuple{N,AbstractArray}},
        end
     end
 end
+
+#####
+##### other functions for computing Jacobians
+#####
 
 "
 function banded_matrix_function(mat_fun::Fxn, U, Fargs...)

@@ -8,14 +8,15 @@ using ForwardDiff
 
 # make 3-field solution
 u = collect(LinRange(-1,1,10))
+# U = (u,u,u)
 U = SVector{3}(u,u,u)
 
 # define flux function and its derivative
 function flux_function(uL,vL,wL,uR,vR,wR)
     avg(x,y) = @. .5*(x+y)
-    Fx = @SVector [avg(uL,uR),avg(vL,vR),avg(wL,wR)]
-    Fy = @SVector [avg(uL,uR),avg(vL,vR),avg(wL,wR)]
-    return @SVector [Fx,Fy]
+    Fx = SVector{3}(avg(uL,uR),avg(vL,vR),avg(wL,wR))
+    Fy = SVector{3}(avg(uL,uR),avg(vL,vR),avg(wL,wR))
+    return SVector{2}(Fx,Fy)
 end
 
 dfx(UL,UR) = ForwardDiff.jacobian(UR->flux_function(UL...,UR...)[1], UR)
@@ -28,7 +29,7 @@ A = ntuple(x->A,2)
 A = (A->A-A').(A) # make skew for exact formula testing
 ATr = (A->Matrix(transpose(A))).(A)
 
-@testset "Flux diff tests" begin
+@testset "Flux diff tests w/StaticArrays" begin
 
     rhs = hadamard_sum(ATr,flux_function,U)
     @test (A[1]*U[1] + U[1].*sum(A[1],dims=2)) ≈ rhs[1]
@@ -37,6 +38,37 @@ ATr = (A->Matrix(transpose(A))).(A)
 
     rhs_sparse = hadamard_sum(sparse.(ATr),flux_function,U)
     @test all(rhs .≈ rhs_sparse)
+
+    # test tuple args too
+    v = collect(LinRange(-1,1,10))
+    V = (v,v,v)
+    W = [v,v,v]
+    # define flux function and its derivative
+    function flux_function_tuple(uL,vL,wL,uR,vR,wR)
+        avg(x,y) = @. .5*(x+y)
+        Fx = avg(uL,uR),avg(vL,vR),avg(wL,wR)
+        Fy = avg(uL,uR),avg(vL,vR),avg(wL,wR)
+        return Fx,Fy
+    end
+    rhs2 = hadamard_sum(ATr,flux_function_tuple,V)
+    @test all(rhs .≈ rhs2)
+
+    function test(u,F)
+        i,j = 1,2
+        Fargs = ()
+        rhs = u
+        val_i = zeros(eltype(first(rhs)),length(rhs))
+        ui = getindex.(u,i)
+        uj = getindex.(u,j)
+        ATrij = getindex.(ATr,j,i)
+        Fij = F(ui...,getindex.(Fargs,i)...,uj...,getindex.(Fargs,j)...)
+        return ATrij,Fij
+    end
+    Aij,Fij1 = test(U,flux_function)
+    _,Fij2 = test(V,flux_function_tuple)
+    _,Fij3 = test(W,flux_function_tuple)
+    # val_i .+= sum.(unzip(bmult.(ATrij,Fij)))
+
 end
 
 @testset "Jacobian tests" begin

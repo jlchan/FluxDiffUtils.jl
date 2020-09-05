@@ -33,7 +33,7 @@ export banded_matrix_function, banded_matrix_function!
 #     return hadamard_jacobian(tuple(A_template), dF, U, Fargs...; scale = scale)
 # end
 
-include("flux_diff.jl")
-include("jacobians.jl")
+include("flux_diff_utils.jl")
+# include("jacobians.jl")
 
 end
