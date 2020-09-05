@@ -1,8 +1,8 @@
 # FluxDiffUtils
 
-[![Build Status](https://travis-ci.com/jlchan/ExplicitFluxDiffJacobians.jl.svg?branch=master)](https://travis-ci.com/jlchan/ExplicitFluxDiffJacobians.jl)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/jlchan/ExplicitFluxDiffJacobians.jl?svg=true)](https://ci.appveyor.com/project/jlchan/ExplicitFluxDiffJacobians-jl)
-[![Codecov](https://codecov.io/gh/jlchan/ExplicitFluxDiffJacobians.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jlchan/ExplicitFluxDiffJacobians.jl)
+[![Build Status](https://travis-ci.com/jlchan/FluxDiffUtils.jl.svg?branch=master)](https://travis-ci.com/jlchan/FluxDiffUtils.jl)
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/jlchan/FluxDiffUtils.jl?svg=true)](https://ci.appveyor.com/project/jlchan/FluxDiffUtils-jl)
+[![Codecov](https://codecov.io/gh/jlchan/FluxDiffUtils.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jlchan/FluxDiffUtils.jl)
 
 Utilities for flux differencing, as well as Jacobian computations for flux differencing type discretizations (given derivatives of flux functions). Code based in part on this [preprint](https://arxiv.org/abs/2006.07504).
 
