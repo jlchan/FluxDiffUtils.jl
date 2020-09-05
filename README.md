@@ -6,6 +6,14 @@
 
 Utilities for flux differencing, as well as Jacobian computations for flux differencing type discretizations (given derivatives of flux functions). Code based in part on this [preprint](https://arxiv.org/abs/2006.07504).
 
+## Performance
+
+The routines are meant to be fairly general, but specialize depending on whether the operators are `AbstractArray` or `SparseMatrixCSC` to capitalize on sparsity. The code also appears to much faster than the old ESDG.jl hand-coded routines -when computing a flux differencing step using fluxes from [EntropyStableEuler.jl](https://github.com/jlchan/EntropyStableEuler.jl), FluxDiffUtils.jl was about 68 times faster on a single core.
+```
+613.832 μs (6092 allocations: 220.29 KiB) # old ESDG.jl routines
+9.060 μs (27 allocations: 3.12 KiB) # FluxDiffUtils.jl 
+```
+
 ## Example
 ```
 using LinearAlgebra
