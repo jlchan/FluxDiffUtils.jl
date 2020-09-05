@@ -46,8 +46,8 @@ end
     Jdense = hadamard_jacobian(A,df,U)
     J = hadamard_jacobian(sparse.(A),df,U)
     # no factor of .5 since Alist = (A,A)
-    @test J[1][1] ≈ first(A) + diagm(vec(sum(first(A),dims=2)))
-    @test J[2][2] ≈ first(A) + diagm(vec(sum(first(A),dims=2)))
+    @test J[1][1] ≈ first(A) - diagm(vec(sum(first(A),dims=2)))
+    @test J[2][2] ≈ first(A) - diagm(vec(sum(first(A),dims=2)))
     @test norm(J[1][2]) + norm(J[2][1]) < tol
     for i=1:2,j=1:2
         @test J[i][j] ≈ sparse(Jdense[i][j])
