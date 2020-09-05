@@ -1,4 +1,4 @@
-using FluxDiffJacobians
+using FluxDiffUtils
 using Test
 using SparseArrays
 
