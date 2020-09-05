@@ -14,11 +14,13 @@ using FluxDiffUtils
 U = (randn(4),randn(4))
 flux(uL,vL,uR,vR) = (.5*(uL+uR), .5*(vL+vR)),(.5*(uL+uR), .5*(vL+vR))
 df(uL,vL,uR,vR) = ([.5 0; 0 .5], [.5 0; 0 .5]) # jacobians w.r.t. uR,vR
-A_list = (A->A+A').(ntuple(x->randn(4,4),2)) # make skew symmetric
+A_list = (A->A+A').(ntuple(x->randn(4,4),2)) # make a list of symmetric matrices
 
+# compute sum(A.*F,dims=2) where Fij = flux(ui,uj)
 rhs = hadamard_sum(A_list,flux,U)
 jac = hadamard_jacobian(A_list,df,U)
 
+# check against analytical formula
 jac11_exact = sum((A->.5*(A - diagm(vec(sum(A,dims=2))))).(A_list))
 @assert norm(jac11_exact-jac[1][1]) < 1e-12
 ```
