@@ -25,6 +25,8 @@ df(uL,vL,wL,uR,vR,wR) = dfx(SVector{3}(uL,vL,wL),SVector{3}(uR,vR,wR)),
                         dfy(SVector{3}(uL,vL,wL),SVector{3}(uR,vR,wR))
 
 A = randn(10,10)
+A[8:10,8:10] .= 0 # for testing skip_index
+skip_index(i,j) = (i>8)&(j>8)
 A = ntuple(x->A,2)
 A = (A->A-A').(A) # make skew for exact formula testing
 ATr = (A->Matrix(transpose(A))).(A)
@@ -38,6 +40,10 @@ ATr = (A->Matrix(transpose(A))).(A)
 
     rhs_sparse = hadamard_sum(sparse.(ATr),flux_function,U)
     @test all(rhs .≈ rhs_sparse)
+
+    rhs_skipped = hadamard_sum(sparse.(ATr),flux_function,U;
+                              skip_index=skip_index)
+    @test all(rhs .≈ rhs_skipped)
 
     # test tuple args too
     v = collect(LinRange(-1,1,10))
@@ -88,10 +94,17 @@ end
     end
     @test accum_norm < tol
 
+    Jskip = hadamard_jacobian(A,df,U,skip_index=skip_index)
     test_dense_eq_sparse = Bool[]
+    test_skip = Bool[]
     for i=1:3,j=1:3
         push!(test_dense_eq_sparse, J[i][j] ≈ sparse(Jdense[i][j]))
+        push!(test_skip, J[i][j] ≈ sparse(Jskip[i][j]))
     end
+    @test all(test_dense_eq_sparse)
+    @test all(test_skip)
+
+
 
     # for banded diagonal matrix test
     g(u,v) = SMatrix{2,2}([u 0

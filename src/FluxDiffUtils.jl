@@ -17,11 +17,11 @@ export hadamard_sum, hadamard_sum!
 # jacobian matrix routines
 export hadamard_jacobian, hadamard_jacobian! #in next version
 export banded_matrix_function, banded_matrix_function!
-# export accum_hadamard_jacobian! # TODO: remove in next version
 
 # #####
 # ##### single-operator dispatch functions
 # #####
+
 # function hadamard_sum(ATr::AbstractArray, F::Fxn, u, Fargs...) where Fxn
 #     return hadamard_sum(tuple(ATr),F,u,Fargs...)
 # end
