@@ -6,7 +6,7 @@ unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
 unzipsum(a::AbstractArray) = sum(a)
 unzipsum(a::Tuple) = sum.(unzip(a))
 
-# sparse hadamard function matrix utilities
+# hadamard function matrix utilities
 row_range(j,A_list::NTuple{N,AbstractArray}) where {N} = axes(first(A_list),1)
 row_range(j,A_list::NTuple{N,SparseMatrixCSC}) where {N} =
     union(getindex.(rowvals.(A_list),nzrange.(A_list, j))...)
