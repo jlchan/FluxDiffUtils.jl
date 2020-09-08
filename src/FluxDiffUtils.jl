@@ -14,8 +14,10 @@ using SparseArrays
 # flux differencing routines
 export hadamard_sum, hadamard_sum!
 
-# jacobian matrix routines
-export hadamard_jacobian, hadamard_jacobian! #in next version
+# flux differencing jacobian matrix routines
+export hadamard_jacobian, hadamard_jacobian!
+
+# for jacobian formulas involving chain rule factors u(v) -> du/dv
 export banded_matrix_function, banded_matrix_function!
 
 # #####
