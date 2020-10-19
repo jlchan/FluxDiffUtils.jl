@@ -6,10 +6,29 @@ using StaticArrays
 using LinearAlgebra
 using ForwardDiff
 
+@testset "1D flux diff tests" begin
+    u = collect(LinRange(-1,1,10))
+    U = (u,2*u)
+    function flux1D(uL,vL,uR,vR)
+        avg(x,y) = @. .5*(x+y)
+        Fx = avg(uL,uR),avg(vL,vR)
+        return Fx
+    end
+    A = randn(10,10)
+    A[8:10,8:10] .= 0 # for testing skip_index
+    skip_index(i,j) = (i>8)&(j>8)
+    A = (A->A-A')(A) # make skew for exact formula testing
+    ATr = (A->Matrix(transpose(A)))(A)
+
+    rhs = hadamard_sum((ATr,),tuple∘flux1D,U,skip_index=skip_index)
+    @test (A*U[1] + U[1].*sum(A,dims=2)) ≈ 2*rhs[1]
+    @test (A*U[2] + U[2].*sum(A,dims=2)) ≈ 2*rhs[2]
+end
+
 # make 3-field solution
 u = collect(LinRange(-1,1,10))
 # U = (u,u,u)
-U = SVector{3}(u,u,u)
+U = SVector{3}(u,2*u,3*u)
 
 # define flux function and its derivative
 function flux_function(uL,vL,wL,uR,vR,wR)
@@ -47,8 +66,8 @@ ATr = (A->Matrix(transpose(A))).(A)
 
     # test tuple args too
     v = collect(LinRange(-1,1,10))
-    V = (v,v,v)
-    W = [v,v,v]
+    V = (v,2*v,3*v)
+    # W = [v,v,v]
     # define flux function and its derivative
     function flux_function_tuple(uL,vL,wL,uR,vR,wR)
         avg(x,y) = @. .5*(x+y)
@@ -59,22 +78,21 @@ ATr = (A->Matrix(transpose(A))).(A)
     rhs2 = hadamard_sum(ATr,flux_function_tuple,V)
     @test all(rhs .≈ rhs2)
 
-    function test(u,F)
-        i,j = 1,2
-        Fargs = ()
-        rhs = u
-        val_i = zeros(eltype(first(rhs)),length(rhs))
-        ui = getindex.(u,i)
-        uj = getindex.(u,j)
-        ATrij = getindex.(ATr,j,i)
-        Fij = F(ui...,getindex.(Fargs,i)...,uj...,getindex.(Fargs,j)...)
-        return ATrij,Fij
-    end
-    Aij,Fij1 = test(U,flux_function)
-    _,Fij2 = test(V,flux_function_tuple)
-    _,Fij3 = test(W,flux_function_tuple)
-    # val_i .+= sum.(unzip(bmult.(ATrij,Fij)))
-
+    # function test(u,F)
+    #     i,j = 1,2
+    #     Fargs = ()
+    #     rhs = u
+    #     val_i = zeros(eltype(first(rhs)),length(rhs))
+    #     ui = getindex.(u,i)
+    #     uj = getindex.(u,j)
+    #     ATrij = getindex.(ATr,j,i)
+    #     Fij = F(ui...,getindex.(Fargs,i)...,uj...,getindex.(Fargs,j)...)
+    #     return ATrij,Fij
+    # end
+    # Aij,Fij1 = test(U,flux_function)
+    # _,Fij2 = test(V,flux_function_tuple)
+    # _,Fij3 = test(W,flux_function_tuple)
+    # # val_i .+= sum.(unzip(bmult.(ATrij,Fij)))
 end
 
 @testset "Jacobian tests" begin

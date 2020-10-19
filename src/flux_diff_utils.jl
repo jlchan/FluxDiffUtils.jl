@@ -23,6 +23,15 @@ function hadamard_sum(ATr_list::NTuple{N,T}, F::Fxn, u, Fargs...;
     return rhs
 end
 
+# # specialize for the case when it's just a single array
+# function hadamard_sum(ATr_list::AbstractArray{T,2}, F::Fxn, u, Fargs...;
+#                       skip_index=(i,j)->false) where {N,T,Fxn}
+#     rhs = zero.(u)
+#     # wrap ATr_list and output of F in tuples
+#     hadamard_sum!(rhs,(ATr_list,),(x->(x,))∘F,u,Fargs...; skip_index=skip_index)
+#     return rhs
+# end
+
 "function hadamard_sum!(rhs, ATr_list::NTuple{N,AbstractArray{T,2}}, F::Fxn,
                         u, Fargs...; skip_index=(i,j)->false) where {N,T,Fxn}
 
