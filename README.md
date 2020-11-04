@@ -53,4 +53,4 @@ jac11_exact = sum((A->.5*(A + diagm(vec(sum(A,dims=1))))).(A_list))
 - When computing Jacobian matrices, assumes derivatives of flux functions `f(uL,uR)` are taken with respect to `uR`.
 - Jacobians are returned in block form as tuples of tuples (i.e., some assembly required). Number of blocks per dimension is determined by length of input `U = (u1,...,u_Nfields)`
 - For efficiency, `hadamard_sum` takes in the transpose of A, while `hadamard_jacobian` takes in A.
-- When computing Jacobians, specifying if matrices are symmetric or skew-symmetric by setting `matrix_type` to `:sym` or `:skew` can improve efficiency.
+- When computing Jacobians, specifying if matrices are symmetric or skew-symmetric by setting `hadamard_product_type` to `:sym` or `:skew` can improve efficiency.

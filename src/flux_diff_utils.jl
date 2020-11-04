@@ -71,10 +71,10 @@ end
 #####
 
 # top-level dispatch based on matrix information - :sym,:skew
-function scale_factor(matrix_type::Symbol)
-    if matrix_type == :sym
+function scale_factor(hadamard_product_type::Symbol)
+    if hadamard_product_type == :sym
         return I
-    elseif matrix_type == :skew
+    elseif hadamard_product_type == :skew
         return -I
     end
 end
@@ -96,20 +96,20 @@ end
 
 # dispatches for both dense/sparse
 function hadamard_jacobian(A_template_list::NTuple{N,AbstractArray},
-                           matrix_type::Symbol, dF::Fxn, U,
+                           hadamard_product_type::Symbol, dF::Fxn, U,
                            Fargs...; skip_index=(i,j)->false) where {N,Fxn}
     Nfields = length(U)
     A = ntuple(x->ntuple(x->zero.(first(A_template_list)),Nfields),Nfields)
-    hadamard_jacobian!(A,A_template_list, matrix_type, dF, U,
-                        Fargs...;skip_index=skip_index)
+    hadamard_jacobian!(A,A_template_list, hadamard_product_type, dF, U,
+                        Fargs...; skip_index=skip_index)
     return A
 end
 
 # handles both dense/sparse matrices
 function hadamard_jacobian!(A::NTuple{N,NTuple{N,AbstractArray}},
                             A_template_list::NTuple{Nd,AbstractArray},
-                            matrix_type::Symbol, dF::Fxn, U,
-                            Fargs...;skip_index=(i,j)->false) where {N,Nd,Fxn}
+                            hadamard_product_type::Symbol, dF::Fxn, U,
+                            Fargs...; skip_index=(i,j)->false) where {N,Nd,Fxn}
     Nfields = length(U)
     num_pts = size(first(A_template_list),1)
 
@@ -137,7 +137,7 @@ function hadamard_jacobian!(A::NTuple{N,NTuple{N,AbstractArray}},
 
        # add diagonal entry for each block
        for n=1:Nfields, m=1:Nfields
-           A[m][n][j,j] += scale_factor(matrix_type)*dFaccum[m,n]
+           A[m][n][j,j] += scale_factor(hadamard_product_type)*dFaccum[m,n]
        end
     end
 end

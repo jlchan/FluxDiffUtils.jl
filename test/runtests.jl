@@ -122,8 +122,6 @@ end
     @test all(test_dense_eq_sparse)
     @test all(test_skip)
 
-
-
     # for banded diagonal matrix test
     g(u,v) = SMatrix{2,2}([u 0
                            0 v])
