@@ -13,9 +13,10 @@ row_range(j,A_list::NTuple{N,SparseMatrixCSC}) where {N} =
 
 "flatten_tuple_blocks(A): converts a tuple of matrix blocks into a matrix
 
-A = tuple of tuples of Jacobian blocks,
+A::NTuple{N1,NTuple{N2,T}} = tuple of tuples of Jacobian blocks,
     e.g. A[i][j] = ijth block of the Jacobian matrix"
-flatten_tuple_blocks(A) where {N} = hcat(vcat.(A...)...)
+flatten_tuple_blocks(A::NTuple{N1,NTuple{N2,T}}) where {N1,N2,T} =
+                    hcat(vcat.(A...)...)
 #####
 ##### routine works for both dense/sparse matrix routines
 #####
