@@ -129,6 +129,9 @@ end
     @test G[1][1] ≈ spdiagm(0=>U[1])
     @test norm(G[1][2]) + norm(G[2][1]) < tol
     @test G[2][2] ≈ spdiagm(0=>U[2])
+
+    # test flattening of matrix
+    @test flatten_tuple_blocks(J) ≈ kron(I(3),first(A) - diagm(vec(sum(first(A),dims=1))))
 end
 
 # @testset "Jacobian tests" begin

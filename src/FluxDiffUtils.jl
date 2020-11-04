@@ -20,6 +20,9 @@ export hadamard_jacobian, hadamard_jacobian!
 # for jacobian formulas involving chain rule factors u(v) -> du/dv
 export banded_matrix_function, banded_matrix_function!
 
+# for converting tuples of tuples of Jacobian blocks to global matrices
+export flatten_tuple_blocks
+
 # #####
 # ##### single-operator dispatch functions
 # #####
