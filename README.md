@@ -45,12 +45,16 @@ jac = hadamard_jacobian(A_list, df, U)
 
 jac11_exact = sum((A->.5*(A + diagm(vec(sum(A,dims=1))))).(A_list))
 @test norm(jac11_exact-jac[1][1]) < 1e-12
+
+# converts tuple-block storage of jac to a global sparse matrix
+#   flatten_tuple_blocks(A) = hcat(vcat.(A...)...)
+jac_global = flatten_tuple_blocks(jac)
 ```
 
 ## Conventions:
 - Assumes non-grouped arguments for both fluxes and derivatives (e.g., FluxDiffUtils expects fluxes of the form `f(u1,u2,v1,v2)` instead of `f(U,V)` for `U=(u1,u2), V=(v1,v2)`).
 - Assumes the number of outputs from the flux matches the number of operators passed in (e.g., if `f(uL,vL)` has 2 outputs `g,h`, you should provide matrices `(A1, A2)` which will then compute `sum(A1.*g + A2.*h, dims = 2)`)
 - When computing Jacobian matrices, assumes derivatives of flux functions `f(uL,uR)` are taken with respect to `uR`.
-- Jacobians are returned in block form as tuples of tuples (i.e., some assembly required). Number of blocks per dimension is determined by length of input `U = (u1,...,u_Nfields)`
-- For efficiency, `hadamard_sum` takes in the transpose of A, while `hadamard_jacobian` takes in A.
+- Jacobians are returned in block form as tuples of tuples (i.e., some assembly required - see `flatten_tuple_blocks`). Number of blocks per dimension is determined by length of input `U = (u1,...,u_Nfields)`
+- For efficiency, `hadamard_sum` takes in the transpose of a matrix `A`, while `hadamard_jacobian` takes in the un-transposed matrix `A`.
 - When computing Jacobians, specifying if matrices are symmetric or skew-symmetric by setting `hadamard_product_type` to `:sym` or `:skew` can improve efficiency.

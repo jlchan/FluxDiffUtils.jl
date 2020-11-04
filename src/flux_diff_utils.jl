@@ -11,6 +11,11 @@ row_range(j,A_list::NTuple{N,AbstractArray}) where {N} = axes(first(A_list),1)
 row_range(j,A_list::NTuple{N,SparseMatrixCSC}) where {N} =
     union(getindex.(rowvals.(A_list),nzrange.(A_list, j))...)
 
+"flatten_tuple_blocks(A): converts a tuple of matrix blocks into a matrix
+
+A::NTuple{N,AbstractArray} = tuple of tuples of Jacobian blocks,
+    e.g. A[i][j] = ijth block of the Jacobian matrix"
+flatten_tuple_blocks(A::NTuple{N,AbstractArray}) = hcat(vcat.(A...)...)
 #####
 ##### routine works for both dense/sparse matrix routines
 #####
@@ -70,7 +75,8 @@ end
 ##### Jacobian functions
 #####
 
-# top-level dispatch based on matrix information - :sym,:skew
+"function scale_factor(hadamard_product_type::Symbol)
+    chooses a sign based on the type of hadamard product - :sym,:skew"
 function scale_factor(hadamard_product_type::Symbol)
     if hadamard_product_type == :sym
         return I
@@ -79,7 +85,15 @@ function scale_factor(hadamard_product_type::Symbol)
     end
 end
 
-# matrix type not specified
+# hadamard product type not specified
+"function hadamard_jacobian(A_template_list::NTuple{N,AbstractArray},
+                           dF::Fxn, U,Fargs...; skip_index=(i,j)->false) where {N,Fxn}
+
+    A_template_list = tuple of operators
+    dF = Jacobian of the flux function
+    U = solution at which to evaluate the Jacobian
+    Fargs = extra args for df(uL,uR)
+    skip_index = optional function to skip computation of entries"
 function hadamard_jacobian(A_template_list::NTuple{N,AbstractArray}, dF::Fxn,
                             U, Fargs...; skip_index=(i,j)->false) where {N,Fxn}
 
@@ -95,6 +109,16 @@ function hadamard_jacobian(A_template_list::NTuple{N,AbstractArray}, dF::Fxn,
 end
 
 # dispatches for both dense/sparse
+"function hadamard_jacobian(A_template_list::NTuple{N,AbstractArray},
+                           hadamard_product_type::Symbol, dF::Fxn, U,
+                           Fargs...; skip_index=(i,j)->false) where {N,Fxn}
+
+    A_template_list = tuple of operators
+    hadamard_product_type = :skew, :sym
+    dF = Jacobian of the flux function
+    U = solution at which to evaluate the Jacobian
+    Fargs = extra args for df(uL,uR)
+    skip_index = optional function to skip computation of entries"
 function hadamard_jacobian(A_template_list::NTuple{N,AbstractArray},
                            hadamard_product_type::Symbol, dF::Fxn, U,
                            Fargs...; skip_index=(i,j)->false) where {N,Fxn}
@@ -106,6 +130,18 @@ function hadamard_jacobian(A_template_list::NTuple{N,AbstractArray},
 end
 
 # handles both dense/sparse matrices
+"function hadamard_jacobian!(A::NTuple{N,NTuple{N,AbstractArray}},
+                            A_template_list::NTuple{Nd,AbstractArray},
+                            hadamard_product_type::Symbol, dF::Fxn, U,
+                            Fargs...; skip_index=(i,j)->false) where {N,Nd,Fxn}
+
+    A = array for storing Jacobian output
+    A_template_list = tuple of operators
+    hadamard_product_type = :skew, :sym
+    dF = Jacobian of the flux function
+    U = solution at which to evaluate the Jacobian
+    Fargs = extra args for df(uL,uR)
+    skip_index = optional function to skip computation of entries"
 function hadamard_jacobian!(A::NTuple{N,NTuple{N,AbstractArray}},
                             A_template_list::NTuple{Nd,AbstractArray},
                             hadamard_product_type::Symbol, dF::Fxn, U,
