@@ -2,13 +2,14 @@
 
 [![Build Status](https://travis-ci.com/jlchan/FluxDiffUtils.jl.svg?branch=master)](https://travis-ci.com/jlchan/FluxDiffUtils.jl)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/jlchan/FluxDiffUtils.jl?svg=true)](https://ci.appveyor.com/project/jlchan/FluxDiffUtils-jl)
+[![Build status](https://github.com/jlchan/FluxDiffUtils.jl/workflows/CI/badge.svg)](https://github.com/jlchan/FluxDiffUtils.jl/actions)
 [![Codecov](https://codecov.io/gh/jlchan/FluxDiffUtils.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jlchan/FluxDiffUtils.jl)
 
 Utilities for flux differencing, as well as Jacobian computations for flux differencing type discretizations (given derivatives of flux functions). Code based in part on this [preprint](https://arxiv.org/abs/2006.07504).
 
 ## Performance
 
-The routines are meant to be fairly general, but specialize depending on whether the operators are `AbstractArray` or `SparseMatrixCSC` to capitalize on sparsity. The code also appears to much faster than the old ESDG.jl hand-coded routines -when computing a flux differencing step using fluxes from [EntropyStableEuler.jl](https://github.com/jlchan/EntropyStableEuler.jl), FluxDiffUtils.jl was about 68 times faster on a single core.
+The routines are meant to be fairly general, but specialize depending on whether the operators are `AbstractArray` or `SparseMatrixCSC` to capitalize on sparsity. The code also appears to much faster than the old ESDG.jl hand-coded routines - when computing a flux differencing step using fluxes from [EntropyStableEuler.jl](https://github.com/jlchan/EntropyStableEuler.jl), FluxDiffUtils.jl was about 68 times faster on a single core.
 ```
 613.832 μs (6092 allocations: 220.29 KiB) # old ESDG.jl routines
 9.060 μs (27 allocations: 3.12 KiB) # FluxDiffUtils.jl
@@ -57,4 +58,4 @@ jac_global = flatten_tuple_blocks(jac)
 - When computing Jacobian matrices, assumes derivatives of flux functions `f(uL,uR)` are taken with respect to `uR`.
 - Jacobians are returned in block form as tuples of tuples (i.e., some assembly required - see `flatten_tuple_blocks`). Number of blocks per dimension is determined by length of input `U = (u1,...,u_Nfields)`
 - For efficiency, `hadamard_sum` takes in the transpose of a matrix `A`, while `hadamard_jacobian` takes in the un-transposed matrix `A`.
-- When computing Jacobians, specifying if matrices are symmetric or skew-symmetric by setting `hadamard_product_type` to `:sym` or `:skew` can improve efficiency.
+- Jacobian computations can be made more efficient by specifying if the Hadamard product `Q.*F` (where `Q,F` are discretization and flux matrices, respectively) is symmetric or skew-symmetric by setting `hadamard_product_type` to `:sym` or `:skew`.
