@@ -9,11 +9,7 @@ Utilities for flux differencing, as well as Jacobian computations for flux diffe
 
 ## Performance
 
-The routines are meant to be fairly general, but specialize depending on whether the operators are `AbstractArray` or `SparseMatrixCSC` to capitalize on sparsity. The code also appears to much faster than the old ESDG.jl hand-coded routines - when computing a flux differencing step using fluxes from [EntropyStableEuler.jl](https://github.com/jlchan/EntropyStableEuler.jl), FluxDiffUtils.jl was about 68 times faster on a single core.
-```
-613.832 μs (6092 allocations: 220.29 KiB) # old ESDG.jl routines
-9.060 μs (27 allocations: 3.12 KiB) # FluxDiffUtils.jl
-```
+The routines are meant to be fairly general, but specialize depending on whether the operators are `AbstractArray` or `SparseMatrixCSC` to capitalize on sparsity.
 
 ## Example
 ```
@@ -53,9 +49,8 @@ jac_global = flatten_tuple_blocks(jac)
 ```
 
 ## Conventions:
-- Assumes non-grouped arguments for both fluxes and derivatives (e.g., FluxDiffUtils expects fluxes of the form `f(u1,u2,v1,v2)` instead of `f(U,V)` for `U=(u1,u2), V=(v1,v2)`).
+- Assumes grouped arguments for both fluxes and derivatives (e.g., FluxDiffUtils expects fluxes of the form  `f(U,V)` instead of `f(u1,u2,v1,v2)` for `U=(u1,u2), V=(v1,v2)`).
 - Assumes the number of outputs from the flux matches the number of operators passed in (e.g., if `f(uL,vL)` has 2 outputs `g,h`, you should provide matrices `(A1, A2)` which will then compute `sum(A1.*g + A2.*h, dims = 2)`)
-- When computing Jacobian matrices, assumes derivatives of flux functions `f(uL,uR)` are taken with respect to `uR`.
-- Jacobians are returned in block form as tuples of tuples (i.e., some assembly required - see `flatten_tuple_blocks`). Number of blocks per dimension is determined by length of input `U = (u1,...,u_Nfields)`
-- For efficiency, `hadamard_sum` takes in the transpose of a matrix `A`, while `hadamard_jacobian` takes in the un-transposed matrix `A`.
+- When computing Jacobian matrices, assumes derivatives of flux functions `f(uL,uR)` are taken with respect to the second argument `uR`.
+- Jacobians are returned as a StaticArray of arrays, and can be concatenated using `hvcat(size(jac,1),jac...)`.
 - Jacobian computations can be made more efficient by specifying if the Hadamard product `Q.*F` (where `Q,F` are discretization and flux matrices, respectively) is symmetric or skew-symmetric by setting `hadamard_product_type` to `:sym` or `:skew`.
