@@ -1,10 +1,5 @@
 # helper functions
 bmult(a,b) = a.*b # broadcasted multiplication
-unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
-
-# unzip for tuple - a little hacky
-unzipsum(a::AbstractArray) = sum(a)
-unzipsum(a::Tuple) = sum.(unzip(a))
 
 # hadamard function matrix utilities
 row_range(j,A_list::NTuple{N,AbstractArray}) where {N} = axes(first(A_list),1)
@@ -15,7 +10,20 @@ row_range(j,A_list::NTuple{N,SparseMatrixCSC}) where {N} =
 ##### routine works for both dense/sparse matrix routines
 #####
 
-# tuple ATr_list dispatch to both dense/sparse
+"""
+    hadamard_sum(A_list::NTuple{N,T}, F::Fxn, u, Fargs...;
+                 skip_index=(i,j)->false) where {N,T,Fxn}
+
+computes ∑_i sum(Ai.*Fi,dims=2) where (Fi)_jk = F(uj,uk)[i]
+
+Inputs
+- A_list: tuple of operators (A1,...,Ad)
+- F: flux function which outputs a d-tuple of flux vectors
+- u: solution used to evaluate the flux
+- Fargs: extra arguments to F(ui,getindex.(Fargs,i)...,
+                            uj,getindex.(Fargs,j)...)
+- (optional) skip_index(i,j)==true skips computing fluxes for (i,j)
+"""
 function hadamard_sum(A_list::NTuple{N,T}, F::Fxn, u, Fargs...;
                       skip_index=(i,j)->false) where {N,T,Fxn}
     rhs = zero.(u)
@@ -23,25 +31,17 @@ function hadamard_sum(A_list::NTuple{N,T}, F::Fxn, u, Fargs...;
     return rhs
 end
 
+"""
+    hadamard_sum!(rhs, A_list::NTuple{N,T}, F::Fxn, u, Fargs...;
+                 skip_index=(i,j)->false) where {N,T,Fxn}
+
+Mutating version of `hadamard_sum`. rhs = storage for output
+"""
 function hadamard_sum!(rhs, A_list::NTuple{N,T}, F::Fxn,
                        u, Fargs...; skip_index=(i,j)->false) where {N,T,Fxn}
     hadamard_sum_ATr!(rhs,transpose.(A_list),F,u,Fargs...; skip_index=skip_index)
 end
 
-"""
-    hadamard_sum_ATr!(rhs, ATr_list::NTuple{N,AbstractArray{T,2}}, F::Fxn,
-                      u, Fargs...; skip_index=(i,j)->false) where {N,T,Fxn}
-
-computes ∑_i sum(Ai.*Fi,dims=2) where (Fi)_jk = F(uj,uk)[i]
-
-rhs: output tuple
-ATr_list: tuple of operators (A1,...,Ad)
-F: flux function which outputs a d-tuple of flux values
-u: solution used to evaluate the flux
-Fargs: extra arguments to F(ui...,getindex.(Fargs,i)...,
-                                uj...,getindex.(Fargs,j)...)
-(optional) skip_index(i,j)==true skips computing fluxes for (i,j)
-"""
 function hadamard_sum_ATr!(rhs, ATr_list::NTuple{N,T}, F::Fxn,
                         u, Fargs...; skip_index=(i,j)->false) where {N,T,Fxn}
     # cols = rowvals.(ATr_list)
@@ -67,11 +67,6 @@ end
 ##### Jacobian functions
 #####
 
-"""
-    scale_factor(hadamard_product_type::Symbol)
-
-chooses a sign based on the type of hadamard product - :sym,:skew
-"""
 function scale_factor(hadamard_product_type::Symbol)
     if hadamard_product_type == :sym
         return I
@@ -80,18 +75,6 @@ function scale_factor(hadamard_product_type::Symbol)
     end
 end
 
-"""
-    hadamard_jacobian(A_list::NTuple{N,AbstractArray},
-                           dF::Fxn, U,Fargs...; skip_index=(i,j)->false) where {N,Fxn}
-
-    For when the hadamard product type not specified
-
-    A_list = tuple of operators
-    dF = Jacobian of the flux function
-    U = solution at which to evaluate the Jacobian
-    Fargs = extra args for df(uL,uR)
-    skip_index(i,j) = optional function specifying whether to skip computation of entries
-"""
 function hadamard_jacobian(A_list, dF::Fxn,
                            U, Fargs...; skip_index=(i,j)->false) where {N,Fxn}
 
@@ -104,21 +87,31 @@ function hadamard_jacobian(A_list, dF::Fxn,
            )
 end
 
-# dispatches for both dense/sparse
 """
-    hadamard_jacobian(A_list,
-                      hadamard_product_type::Symbol, dF::Fxn, U,
+    hadamard_jacobian(A_list, dF::Fxn, U, Fargs...;
+                      skip_index=(i,j)->false) where {N,Fxn}
+
+    hadamard_jacobian(A_list, hadamard_product_type, dF::Fxn, U,
                       Fargs...; skip_index=(i,j)->false) where {N,Fxn}
 
-    A_list = tuple of operators
-    hadamard_product_type = :skew, :sym
-    dF = Jacobian of the flux function
-    U = solution at which to evaluate the Jacobian
-    Fargs = extra args for df(uL,uR)
-    skip_index(i,j) = optional function to skip computation of (i,j)th entry
+    hadamard_jacobian!(A::SMatrix{N,N},
+                       A_list::NTuple{Nd,AbstractArray},
+                       hadamard_product_type::Symbol, dF::Fxn, U,
+                       Fargs...; skip_index=(i,j)->false) where {N,Nd,Fxn}
+
+Computes Jacobian of the flux differencing term ∑_i sum(Ai.*Fi). Outputs array whose
+entries are blocks of the Jacobian matrix corresponding to components of flux vectors.
+
+Inputs:
+- A = array for storing Jacobian output, each entry stores a block of the Jacobian.
+- A_list = tuple of operators
+- (optional) hadamard_product_type = :skew, :sym. Specifies if Ai.*Fi is skew or symmetric.
+- dF = Jacobian of the flux function fS(uL,uR) with respect to uR
+- U = solution at which to evaluate the Jacobian
+- Fargs = extra args for df(uL,uR)
+- (optional) skip_index(i,j) = optional function to skip computation of (i,j)th entry
 """
-function hadamard_jacobian(A_list,
-                           hadamard_product_type, dF::Fxn, U,
+function hadamard_jacobian(A_list, hadamard_product_type, dF::Fxn, U,
                            Fargs...; skip_index=(i,j)->false) where {N,Fxn}
     Nfields = length(U)
     # sum(A_list) = sparse matrix with union of A[i] entries
@@ -129,20 +122,6 @@ function hadamard_jacobian(A_list,
 end
 
 # handles both dense/sparse matrices
-"""function hadamard_jacobian!(A::NTuple{N,NTuple{N,AbstractArray}},
-                               A_list::NTuple{Nd,AbstractArray},
-                               hadamard_product_type::Symbol, dF::Fxn, U,
-                               Fargs...; skip_index=(i,j)->false) where {N,Nd,Fxn}
-
-    A = array for storing Jacobian output
-    A_list = tuple of operators
-    hadamard_product_type = :skew, :sym
-    dF = Jacobian of the flux function
-    U = solution at which to evaluate the Jacobian
-    Fargs = extra args for df(uL,uR)
-    skip_index(i,j) = optional function to skip computation of (i,j)th entry
-"""
-
 function hadamard_jacobian!(A::SMatrix{N,N},
                             A_list::NTuple{Nd,AbstractArray},
                             hadamard_product_type::Symbol, dF::Fxn, U,
@@ -185,8 +164,16 @@ end
 """
     banded_function_evals(mat_fun::Fxn, U, Fargs...)
 
-computes block-banded matrix whose bands are entries of matrix-valued
-function evals (e.g., a Jacobian function).
+Computes block-banded matrix whose bands are entries of matrix-valued
+function evals (e.g., a Jacobian function). Returns SMatrix whose blocks correspond
+to function components evaluated at values of U.
+
+## Example:
+```
+julia> mat_fun(U) = U[1],U[2]
+julia> U = (randn(10),randn(10))
+julia> banded_function_evals(mat_fun,U)
+```
 """
 function banded_function_evals(mat_fun::Fxn, U, Fargs ...) where Fxn
     n = length(first(U))
@@ -197,10 +184,9 @@ function banded_function_evals(mat_fun::Fxn, U, Fargs ...) where Fxn
 end
 
 """
-    banded_function_evals!(A::SparseMatrixCSC,mat_fun::Fxn, U, Fargs ...) where Fxn
+    banded_function_evals!(A,mat_fun::Fxn, U, Fargs ...) where Fxn
 
-computes a block-banded matrix whose bands are entries of matrix-valued
-function evals (e.g., a Jacobian function) - mutating version.
+Mutating version of banded_function_evals.
 """
 function banded_function_evals!(A,mat_fun::Fxn, U, Fargs ...) where {Fxn}
     Nfields = size(A,2)
