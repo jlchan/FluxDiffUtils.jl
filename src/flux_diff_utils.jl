@@ -179,7 +179,7 @@ function evals (e.g., a Jacobian). Returns SMatrix whose blocks correspond to fu
 components evaluated at values of U.
 
 ## Example:
-```
+```julia
 julia> mat_fun(U) = [U[1] U[2]; U[2] U[1]]
 julia> U = (randn(10),randn(10))
 julia> banded_function_evals(mat_fun,U)

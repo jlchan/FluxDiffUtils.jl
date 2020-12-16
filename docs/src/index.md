@@ -5,7 +5,7 @@ This package provides utilities for flux differencing and computation of flux di
 The routines are meant to be fairly general, but specialize depending on whether the operators are general arrays or `SparseMatrixCSC` (to capitalize on sparsity).
 
 ## Example
-```
+```julia
 using LinearAlgebra
 using FluxDiffUtils
 using Test
