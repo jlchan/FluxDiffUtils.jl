@@ -1,8 +1,4 @@
-# FluxDiffUtils
-
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/jlchan/FluxDiffUtils.jl?svg=true)](https://ci.appveyor.com/project/jlchan/FluxDiffUtils-jl)
-[![Build status](https://github.com/jlchan/FluxDiffUtils.jl/workflows/CI/badge.svg)](https://github.com/jlchan/FluxDiffUtils.jl/actions)
-[![Codecov](https://codecov.io/gh/jlchan/FluxDiffUtils.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jlchan/FluxDiffUtils.jl)
+# FluxDiffUtils Documentation
 
 This package provides utilities for flux differencing and computation of flux differencing Jacobians in terms of derivatives of flux functions. The code based in part on the preprint ["Efficient computation of Jacobian matrices for entropy stable summation-by-parts schemes"](https://arxiv.org/abs/2006.07504).
 
@@ -50,3 +46,14 @@ jac_global = hvcat(size(jac,1),jac...)
 - For Jacobian matrices, we assume derivatives of flux functions `f(uL,uR)` are taken with respect to the second argument `uR`.
 - Jacobians are returned as a StaticArray of arrays, and can be concatenated into a global matrix using `hvcat(size(jac,1),jac...)`.
 - Jacobian computations can be made more efficient by specifying if the Hadamard product `A.*F` (where `A` is a discretization matrix and `F` is a flux matrix) is symmetric or skew-symmetric by setting `hadamard_product_type` to `:sym` or `:skew`. Otherwise, `FluxDiffUtils.jl` will split the matrix `A` into skew and symmetric parts and compute Jacobians for each.
+
+## Index
+
+```@index
+```
+
+## Functions
+
+```@autodocs
+Modules = [FluxDiffUtils]
+```

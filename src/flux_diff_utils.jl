@@ -17,12 +17,12 @@ row_range(j,A_list::NTuple{N,SparseMatrixCSC}) where {N} =
 computes ∑_i sum(Ai.*Fi,dims=2) where (Fi)_jk = F(uj,uk)[i]
 
 Inputs
-- A_list: tuple of operators (A1,...,Ad)
-- F: flux function which outputs a d-tuple of flux vectors
-- u: solution used to evaluate the flux
-- Fargs: extra arguments to F(ui,getindex.(Fargs,i)...,
-                            uj,getindex.(Fargs,j)...)
-- (optional) skip_index(i,j)==true skips computing fluxes for (i,j)
+- `A_list`: tuple of operators (A1,...,Ad)
+- `F`: flux function which outputs a d-tuple of flux vectors
+- `u`: collection of solution values (or arrays) at which to evaluate `F`
+- `Fargs`: extra arguments to `F(ui,getindex.(Fargs,i)...,
+                            uj,getindex.(Fargs,j)...)``
+- (optional) `skip_index(i,j)==true` skips computing fluxes for index (i,j)
 """
 function hadamard_sum(A_list::NTuple{N,T}, F::Fxn, u, Fargs...;
                       skip_index=(i,j)->false) where {N,T,Fxn}
@@ -35,7 +35,7 @@ end
     hadamard_sum!(rhs, A_list::NTuple{N,T}, F::Fxn, u, Fargs...;
                  skip_index=(i,j)->false) where {N,T,Fxn}
 
-Mutating version of `hadamard_sum`. rhs = storage for output
+Mutating version of [`hadamard_sum`](@ref), where `rhs` is storage for output.
 """
 function hadamard_sum!(rhs, A_list::NTuple{N,T}, F::Fxn,
                        u, Fargs...; skip_index=(i,j)->false) where {N,T,Fxn}
@@ -94,22 +94,16 @@ end
     hadamard_jacobian(A_list, hadamard_product_type, dF::Fxn, U,
                       Fargs...; skip_index=(i,j)->false) where {N,Fxn}
 
-    hadamard_jacobian!(A::SMatrix{N,N},
-                       A_list::NTuple{Nd,AbstractArray},
-                       hadamard_product_type::Symbol, dF::Fxn, U,
-                       Fargs...; skip_index=(i,j)->false) where {N,Nd,Fxn}
-
 Computes Jacobian of the flux differencing term ∑_i sum(Ai.*Fi). Outputs array whose
 entries are blocks of the Jacobian matrix corresponding to components of flux vectors.
 
 Inputs:
-- A = array for storing Jacobian output, each entry stores a block of the Jacobian.
-- A_list = tuple of operators
-- (optional) hadamard_product_type = :skew, :sym. Specifies if Ai.*Fi is skew or symmetric.
-- dF = Jacobian of the flux function fS(uL,uR) with respect to uR
-- U = solution at which to evaluate the Jacobian
-- Fargs = extra args for df(uL,uR)
-- (optional) skip_index(i,j) = optional function to skip computation of (i,j)th entry
+- `A_list` = tuple of operators
+- (optional) `hadamard_product_type` = `:skew`, `:sym`. Specifies if `Ai.*Fi` is skew or symmetric.
+- `dF` = Jacobian of the flux function `F(uL,uR)` with respect to `uR`
+- `U` = solution at which to evaluate the Jacobian
+- `Fargs` = extra args for `dF(uL,uR)`
+- (optional) `skip_index(i,j)` = optional function to skip computation of (i,j)th entry
 """
 function hadamard_jacobian(A_list, hadamard_product_type, dF::Fxn, U,
                            Fargs...; skip_index=(i,j)->false) where {N,Fxn}
@@ -122,6 +116,16 @@ function hadamard_jacobian(A_list, hadamard_product_type, dF::Fxn, U,
 end
 
 # handles both dense/sparse matrices
+"""
+    hadamard_jacobian!(A::SMatrix{N,N},
+                       A_list::NTuple{Nd,AbstractArray},
+                       hadamard_product_type::Symbol, dF::Fxn, U,
+                       Fargs...; skip_index=(i,j)->false) where {N,Nd,Fxn}
+
+Mutating version of [`hadamard_jacobian`](@ref). `A` = matrix for storing Jacobian
+output, with each entry storing a block of the Jacobian.
+
+"""
 function hadamard_jacobian!(A::SMatrix{N,N},
                             A_list::NTuple{Nd,AbstractArray},
                             hadamard_product_type::Symbol, dF::Fxn, U,
@@ -165,12 +169,12 @@ end
     banded_function_evals(mat_fun::Fxn, U, Fargs...)
 
 Computes block-banded matrix whose bands are entries of matrix-valued
-function evals (e.g., a Jacobian function). Returns SMatrix whose blocks correspond
-to function components evaluated at values of U.
+function evals (e.g., a Jacobian). Returns SMatrix whose blocks correspond to function
+components evaluated at values of U.
 
 ## Example:
 ```
-julia> mat_fun(U) = U[1],U[2]
+julia> mat_fun(U) = [U[1] U[2]; U[2] U[1]]
 julia> U = (randn(10),randn(10))
 julia> banded_function_evals(mat_fun,U)
 ```
@@ -186,7 +190,7 @@ end
 """
     banded_function_evals!(A,mat_fun::Fxn, U, Fargs ...) where Fxn
 
-Mutating version of banded_function_evals.
+Mutating version of [`banded_function_evals`](@ref).
 """
 function banded_function_evals!(A,mat_fun::Fxn, U, Fargs ...) where {Fxn}
     Nfields = size(A,2)
