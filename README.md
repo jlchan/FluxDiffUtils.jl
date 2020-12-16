@@ -1,15 +1,14 @@
 # FluxDiffUtils
 
-[![Build Status](https://travis-ci.com/jlchan/FluxDiffUtils.jl.svg?branch=master)](https://travis-ci.com/jlchan/FluxDiffUtils.jl)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/jlchan/FluxDiffUtils.jl?svg=true)](https://ci.appveyor.com/project/jlchan/FluxDiffUtils-jl)
 [![Build status](https://github.com/jlchan/FluxDiffUtils.jl/workflows/CI/badge.svg)](https://github.com/jlchan/FluxDiffUtils.jl/actions)
 [![Codecov](https://codecov.io/gh/jlchan/FluxDiffUtils.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jlchan/FluxDiffUtils.jl)
 
-Utilities for flux differencing, as well as Jacobian computations for flux differencing type discretizations (given derivatives of flux functions). Code based in part on this [preprint](https://arxiv.org/abs/2006.07504).
+This package provides utilities for flux differencing and computation of flux differencing Jacobians in terms of derivatives of flux functions. The code based in part on the preprint ["Efficient computation of Jacobian matrices for entropy stable summation-by-parts schemes"](https://arxiv.org/abs/2006.07504).
 
 ## Performance
 
-The routines are meant to be fairly general, but specialize depending on whether the operators are `AbstractArray` or `SparseMatrixCSC` to capitalize on sparsity.
+The routines are meant to be fairly general, but specialize depending on whether the operators are general arrays or `SparseMatrixCSC` (to capitalize on sparsity).
 
 ## Example
 ```
@@ -22,30 +21,28 @@ u = collect(LinRange(-1,1,4))
 U = (u,u,u)
 
 avg(x,y) = @. .5*(x+y)
-function flux(uL,vL,wL,uR,vR,wR)
+function flux(UL,UR)
+    uL,vL,wL = UL
+    uR,vR,wR = UR
     Fx = avg(uL,uR),avg(vL,vR),avg(wL,wR)
     Fy = avg(uL,uR),avg(vL,vR),avg(wL,wR)
-    return Fx,Fy
+    return SVector{3}(Fx),SVector{3}(Fy)
 end
 
 # jacobians w.r.t. (uR,vR)
 df(uL,vL,uR,vR) = ([.5 0 0; 0 .5 0; 0 0 .5], [.5 0 0; 0 .5 0; 0 0 .5])
 A_list = (A->A+A').(ntuple(x->randn(4,4),2)) # make symmetric to check formula
 
-# hadamard_sum uses transpose for efficiency
-ATr_list = (A->Matrix(transpose(A))).(A_list)
-rhs = hadamard_sum(ATr_list,flux,U)
+rhs = hadamard_sum(A_list,flux,U)
 
-# jacobian computation doesn't need transpose
 jac = hadamard_jacobian(A_list, df, U)
-# jac = hadamard_jacobian(A_list, :sym, df, U) # faster version
+# jac = hadamard_jacobian(A_list, :sym, df, U) # optimized version
 
 jac11_exact = sum((A->.5*(A + diagm(vec(sum(A,dims=1))))).(A_list))
-@test norm(jac11_exact-jac[1][1]) < 1e-12
+@test norm(jac11_exact-jac[1,1]) < 1e-12
 
-# converts tuple-block storage of jac to a global sparse matrix
-#   flatten_tuple_blocks(A) = hcat(vcat.(A...)...)
-jac_global = flatten_tuple_blocks(jac)
+# converts tuple-block storage of jac to a global matrix
+jac_global = hvcat(size(jac,1),jac...)
 ```
 
 ## Conventions:
