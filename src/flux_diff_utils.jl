@@ -42,6 +42,12 @@ function hadamard_sum!(rhs, A_list::NTuple{N,T}, F::Fxn,
     hadamard_sum_ATr!(rhs,transpose.(A_list),F,u,Fargs...; skip_index=skip_index)
 end
 
+"""
+    hadamard_sum_ATr!(rhs, ATr_list::NTuple{N,T}, F::Fxn, u, Fargs...;
+                 skip_index=(i,j)->false) where {N,T,Fxn}
+
+Same as [`hadamard_sum!`](@ref) but `ATr_list` contains transposed matrices.
+"""
 function hadamard_sum_ATr!(rhs, ATr_list::NTuple{N,T}, F::Fxn,
                         u, Fargs...; skip_index=(i,j)->false) where {N,T,Fxn}
     # cols = rowvals.(ATr_list)
