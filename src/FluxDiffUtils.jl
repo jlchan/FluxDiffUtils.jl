@@ -12,6 +12,9 @@ using LinearAlgebra
 using SparseArrays
 using StaticArrays
 
+# flattens matrices
+export blockcat
+
 # flux differencing routines
 export hadamard_sum, hadamard_sum!, hadamard_sum_ATr!
 

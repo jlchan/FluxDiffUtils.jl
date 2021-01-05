@@ -6,6 +6,44 @@ row_range(j,A_list::NTuple{N,AbstractArray}) where {N} = axes(first(A_list),1)
 row_range(j,A_list::NTuple{N,SparseMatrixCSC}) where {N} =
     union(getindex.(rowvals.(A_list),nzrange.(A_list, j))...)
 
+"""
+    blockcat(n, A)
+
+Concatenates the n-by-n matrix of matrices A into a global matrix.
+If eltype(A) = SparseMatrixCSC, blockcat returns a global sparse matrix.
+Otherwise, blockcat returns a global dense array of type Array{eltype(first(A))}.
+"""
+function blockcat(n, A)
+    A0 = first(A)
+    nA = size(A0, 1)
+    B  = Array{eltype(A0),2}(undef, n * nA, n * nA)
+    for a in 1:n, j in 1:n
+        B[(a-1)*nA .+ (1:nA), (j-1)*nA .+ (1:nA)] .= A[a,j]
+    end
+    return B
+end
+
+function blockcat(n, A::AbstractMatrix{SparseMatrixCSC{Ti,Tv}}) where {Ti,Tv}
+    A0 = first(A)
+    nA = size(A0, 1)
+    B  = spzeros(n * nA, n * nA)
+    for ii in 1:n, jj in 1:n
+        for ijv in zip(findnz(A[ii,jj])...)
+            i,j,Aij = ijv
+            B[(ii-1)*nA + i, (jj-1)*nA + j] = Aij
+        end
+    end
+    return B
+end
+
+# # original function courtesy of Mark Kittisopikul via Julia Slack
+# function vhcat(cols::Tuple{Vararg{Int64,N}}, xs::AbstractVecOrMat{T}...) where {T,N}
+#     cols_cs = cumsum(cols)
+#     cols_cat = ( reduce(vcat, xs[ (1:cols[i]) .+ (cols_cs[i] - cols[i])]) for i in 1:last(cols) )
+#     return reduce(hcat, cols_cat)
+# end
+# vhcat(col_dim,A) = hvcat(col_dim,permutedims(A)...) # doesn't work for SMatrix
+
 #####
 ##### routine works for both dense/sparse matrix routines
 #####

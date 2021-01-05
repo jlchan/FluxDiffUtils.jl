@@ -118,5 +118,5 @@ end
     @test G[2,2] ≈ spdiagm(0=>U[2])
 
     # test flattening of matrix
-    @test hvcat(size(J,1),J...) ≈ kron(I(3),first(A) - diagm(vec(sum(first(A),dims=1))))
+    @test blockcat(size(J,2),J) ≈ kron(I(3),first(A) - diagm(vec(sum(first(A),dims=1))))
 end
