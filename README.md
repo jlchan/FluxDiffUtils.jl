@@ -9,7 +9,8 @@ This package provides utilities for flux differencing and computation of flux di
 The routines are meant to be fairly general, but specialize depending on whether the operators are general arrays or `SparseMatrixCSC` (to capitalize on sparsity).
 
 ## Example
-```
+
+```julia
 using LinearAlgebra
 using FluxDiffUtils
 using Test
@@ -40,7 +41,7 @@ jac11_exact = sum((A->.5*(A + diagm(vec(sum(A,dims=1))))).(A_list))
 @test norm(jac11_exact-jac[1,1]) < 1e-12
 
 # converts tuple-block storage of jac to a global matrix
-jac_global = vhcat(size(jac),jac...)
+jac_global = blockcat(size(jac),jac)
 ```
 
 ## Conventions
@@ -48,5 +49,5 @@ jac_global = vhcat(size(jac),jac...)
 - We assume grouped arguments for both fluxes and derivatives (e.g., `FluxDiffUtils.jl` expects fluxes of the form  `f(U,V)` instead of `f(u1,u2,v1,v2)` for `U=(u1,u2), V=(v1,v2)`).
 - We assume the number of outputs from the flux matches the number of operators passed in. In other words, if `f(uL,vL)` has 2 outputs `g,h`, you should provide matrices `(A1, A2)`. `hadamard_sum` will compute `sum(A1.*g + A2.*h, dims = 2)` (`hadamard_jacobian` behaves similarly).
 - For Jacobian matrices, we assume derivatives of flux functions `f(uL,uR)` are taken with respect to the second argument `uR`.
-- Jacobians are returned as a StaticArray of arrays, and can be concatenated into a global matrix using `vhcat(size(jac),jac...)`.
+- Jacobians are returned as a StaticArray of arrays, and can be concatenated into a global matrix using `blockcat(size(jac),jac)`.
 - Jacobian computations can be made more efficient by specifying if the Hadamard product `A.*F` (where `A` is a discretization matrix and `F` is a flux matrix) is symmetric or skew-symmetric by setting `hadamard_product_type` to `:sym` or `:skew`. Otherwise, `FluxDiffUtils.jl` will split the matrix `A` into skew and symmetric parts and compute Jacobians for each.
