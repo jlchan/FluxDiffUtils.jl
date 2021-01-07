@@ -6,7 +6,7 @@ using StaticArrays
 using LinearAlgebra
 using ForwardDiff
 
-@testset "1D flux diff tests" begin
+@testset "Flux diff tests" begin
     u = collect(LinRange(-1,1,10))
     U = (u,2*u)
     function flux1D(UL,UR)
@@ -116,6 +116,10 @@ end
     @test G[1,1] ≈ spdiagm(0=>U[1])
     @test norm(G[1,2]) + norm(G[2,1]) < tol
     @test G[2,2] ≈ spdiagm(0=>U[2])
+
+    # test blockcat
+    B = [[i] for i=1:2,j=1:2]
+    @test blockcat(size(B,2),B) ≈ [1 1;2 2]
 
     # test flattening of matrix
     @test blockcat(size(J,2),J) ≈ kron(I(3),first(A) - diagm(vec(sum(first(A),dims=1))))
