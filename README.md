@@ -19,8 +19,9 @@ using Test
 u = collect(LinRange(-1,1,4))
 U = (u,u,u)
 
+# define a flux fS
 avg(x,y) = @. .5*(x+y)
-function flux(UL,UR)
+function fS(UL,UR)
     uL,vL,wL = UL
     uR,vR,wR = UR
     Fx = avg(uL,uR),avg(vL,vR),avg(wL,wR)
@@ -29,19 +30,19 @@ function flux(UL,UR)
 end
 
 # jacobians w.r.t. (uR,vR)
-df(uL,vL,uR,vR) = ([.5 0 0; 0 .5 0; 0 0 .5], [.5 0 0; 0 .5 0; 0 0 .5])
+dfS(UL,UR) = ([.5 0 0; 0 .5 0; 0 0 .5], [.5 0 0; 0 .5 0; 0 0 .5])
 A_list = (A->A+A').(ntuple(x->randn(4,4),2)) # make symmetric to check formula
 
-rhs = hadamard_sum(A_list,flux,U)
+rhs = hadamard_sum(A_list,fS,U)
 
-jac = hadamard_jacobian(A_list, df, U)
+jac = hadamard_jacobian(A_list, dfS, U)
 # jac = hadamard_jacobian(A_list, :sym, df, U) # optimized version
 
 jac11_exact = sum((A->.5*(A + diagm(vec(sum(A,dims=1))))).(A_list))
 @test norm(jac11_exact-jac[1,1]) < 1e-12
 
 # converts tuple-block storage of jac to a global matrix
-jac_global = blockcat(size(jac),jac)
+jac_global = blockcat(size(jac,2),jac)
 ```
 
 ## Conventions
