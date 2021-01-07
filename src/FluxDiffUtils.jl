@@ -10,35 +10,20 @@ module FluxDiffUtils
 
 using LinearAlgebra
 using SparseArrays
+using StaticArrays
+
+# flattens matrices
+export blockcat
 
 # flux differencing routines
-export hadamard_sum, hadamard_sum!
+export hadamard_sum, hadamard_sum!, hadamard_sum_ATr!
 
 # flux differencing jacobian matrix routines
 export hadamard_jacobian, hadamard_jacobian!
 
 # for jacobian formulas involving chain rule factors u(v) -> du/dv
-export banded_matrix_function, banded_matrix_function!
-
-# for converting tuples of tuples of Jacobian blocks to global matrices
-export flatten_tuple_blocks
-
-# #####
-# ##### single-operator dispatch functions
-# #####
-
-# function hadamard_sum(ATr::AbstractArray, F::Fxn, u, Fargs...) where Fxn
-#     return hadamard_sum(tuple(ATr),F,u,Fargs...)
-# end
-# function hadamard_sum!(rhs,ATr::AbstractArray, F::Fxn, u, Fargs...) where Fxn
-#     return hadamard_sum(rhs,tuple(ATr),F,u,Fargs...)
-# end
-# function hadamard_jacobian(A_template::SparseMatrixCSC, dF::Fxn,
-#                            U, Fargs...; scale = -1) where Fxn
-#     return hadamard_jacobian(tuple(A_template), dF, U, Fargs...; scale = scale)
-# end
+export banded_function_evals, banded_function_evals!
 
 include("flux_diff_utils.jl")
-# include("jacobians.jl")
 
 end
