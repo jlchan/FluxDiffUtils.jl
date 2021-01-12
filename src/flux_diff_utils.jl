@@ -8,6 +8,7 @@ row_range(j,A_list::NTuple{N,SparseMatrixCSC}) where {N} =
 
 """
     blockcat(n, A)
+    blockcat(n, A::AbstractMatrix{SparseMatrixCSC{Ti,Tv}}) where {Ti,Tv}
 
 Concatenates the n-by-n matrix of matrices A into a global matrix.
 If eltype(A) = SparseMatrixCSC, blockcat returns a global sparse matrix.
@@ -36,58 +37,47 @@ function blockcat(n, A::AbstractMatrix{SparseMatrixCSC{Ti,Tv}}) where {Ti,Tv}
     return B
 end
 
-# # original function courtesy of Mark Kittisopikul via Julia Slack
-# function vhcat(cols::Tuple{Vararg{Int64,N}}, xs::AbstractVecOrMat{T}...) where {T,N}
-#     cols_cs = cumsum(cols)
-#     cols_cat = ( reduce(vcat, xs[ (1:cols[i]) .+ (cols_cs[i] - cols[i])]) for i in 1:last(cols) )
-#     return reduce(hcat, cols_cat)
-# end
-# vhcat(col_dim,A) = hvcat(col_dim,permutedims(A)...) # doesn't work for SMatrix
-
 #####
 ##### routine works for both dense/sparse matrix routines
 #####
 
 """
-    hadamard_sum(A_list::NTuple{N,T}, F::Fxn, u, Fargs...;
+    hadamard_sum(A_list, F::Fxn, u, Fargs...;
                  skip_index=(i,j)->false) where {N,T,Fxn}
 
 computes ∑_i sum(Ai.*Fi,dims=2) where (Fi)_jk = F(uj,uk)[i]
 
 Inputs
-- `A_list`: tuple of operators (A1,...,Ad)
+- `A_list`: tuple (or similar container) of operators (A1,...,Ad)
 - `F`: flux function which outputs a d-tuple of flux vectors
 - `u`: collection of solution values (or arrays) at which to evaluate `F`
 - `Fargs`: extra arguments to `F(ui,getindex.(Fargs,i)...,
                             uj,getindex.(Fargs,j)...)``
 - (optional) `skip_index(i,j)==true` skips computing fluxes for index (i,j)
 """
-function hadamard_sum(A_list::NTuple{N,T}, F::Fxn, u, Fargs...;
-                      skip_index=(i,j)->false) where {N,T,Fxn}
+function hadamard_sum(A_list,F::Fxn,u,Fargs...; skip_index=(i,j)->false) where {Fxn}
     rhs = zero.(u)
     hadamard_sum_ATr!(rhs,transpose.(A_list),F,u,Fargs...; skip_index=skip_index)
     return rhs
 end
 
 """
-    hadamard_sum!(rhs, A_list::NTuple{N,T}, F::Fxn, u, Fargs...;
+    hadamard_sum!(rhs, A_list, F::Fxn, u, Fargs...;
                  skip_index=(i,j)->false) where {N,T,Fxn}
 
 Mutating version of [`hadamard_sum`](@ref), where `rhs` is storage for output.
 """
-function hadamard_sum!(rhs, A_list::NTuple{N,T}, F::Fxn,
-                       u, Fargs...; skip_index=(i,j)->false) where {N,T,Fxn}
+function hadamard_sum!(rhs,A_list,F::Fxn,u,Fargs...; skip_index=(i,j)->false) where {Fxn}
     hadamard_sum_ATr!(rhs,transpose.(A_list),F,u,Fargs...; skip_index=skip_index)
 end
 
 """
-    hadamard_sum_ATr!(rhs, ATr_list::NTuple{N,T}, F::Fxn, u, Fargs...;
-                 skip_index=(i,j)->false) where {N,T,Fxn}
+    hadamard_sum_ATr!(rhs, ATr_list, F::Fxn, u, Fargs...;
+                 skip_index=(i,j)->false) where {Fxn}
 
 Same as [`hadamard_sum!`](@ref) but `ATr_list` contains transposed matrices.
 """
-function hadamard_sum_ATr!(rhs, ATr_list::NTuple{N,T}, F::Fxn,
-                        u, Fargs...; skip_index=(i,j)->false) where {N,T,Fxn}
+function hadamard_sum_ATr!(rhs,ATr_list,F::Fxn,u,Fargs...; skip_index=(i,j)->false) where {Fxn}
     # cols = rowvals.(ATr_list)
     val_i = zeros(eltype(first(rhs)),length(rhs))
     for i = 1:size(first(ATr_list),2) # all ops should be same length
@@ -119,8 +109,7 @@ function scale_factor(hadamard_product_type::Symbol)
     end
 end
 
-function hadamard_jacobian(A_list, dF::Fxn,
-                           U, Fargs...; skip_index=(i,j)->false) where {N,Fxn}
+function hadamard_jacobian(A_list,dF::Fxn,U,Fargs...;skip_index=(i,j)->false) where {N,Fxn}
 
     # make symmetric and skew parts, call jacobian on each part
     Asym_list  = (A->.5*(A+A')).(A_list)
@@ -134,7 +123,6 @@ end
 """
     hadamard_jacobian(A_list, dF::Fxn, U, Fargs...;
                       skip_index=(i,j)->false) where {N,Fxn}
-
     hadamard_jacobian(A_list, hadamard_product_type, dF::Fxn, U,
                       Fargs...; skip_index=(i,j)->false) where {N,Fxn}
 
@@ -149,8 +137,8 @@ Inputs:
 - `Fargs` = extra args for `dF(uL,uR)`
 - (optional) `skip_index(i,j)` = optional function to skip computation of (i,j)th entry
 """
-function hadamard_jacobian(A_list, hadamard_product_type, dF::Fxn, U,
-                           Fargs...; skip_index=(i,j)->false) where {N,Fxn}
+function hadamard_jacobian(A_list,hadamard_product_type,dF::Fxn,U,Fargs...;
+                           skip_index=(i,j)->false) where {N,Fxn}
     Nfields = length(U)
     # sum(A_list) = sparse matrix with union of A[i] entries
     A = SMatrix{Nfields,Nfields}([zero(first(A_list)) for i=1:Nfields, j=1:Nfields])
@@ -161,19 +149,15 @@ end
 
 # handles both dense/sparse matrices
 """
-    hadamard_jacobian!(A::SMatrix{N,N},
-                       A_list::NTuple{Nd,AbstractArray},
-                       hadamard_product_type::Symbol, dF::Fxn, U,
-                       Fargs...; skip_index=(i,j)->false) where {N,Nd,Fxn}
+    hadamard_jacobian!(A::SMatrix{N,N},A_list,hadamard_product_type::Symbol,
+                       dF::Fxn,U,Fargs...; skip_index=(i,j)->false) where {N,Nd,Fxn}
 
 Mutating version of [`hadamard_jacobian`](@ref). `A` = matrix for storing Jacobian
 output, with each entry storing a block of the Jacobian.
 
 """
-function hadamard_jacobian!(A::SMatrix{N,N},
-                            A_list::NTuple{Nd,AbstractArray},
-                            hadamard_product_type::Symbol, dF::Fxn, U,
-                            Fargs...; skip_index=(i,j)->false) where {N,Nd,Fxn}
+function hadamard_jacobian!(A::SMatrix{N,N},A_list,hadamard_product_type::Symbol,
+                            dF::Fxn,U,Fargs...; skip_index=(i,j)->false) where {N,Fxn}
     Nfields = length(U)
     num_pts = size(first(A_list),1)
 
@@ -223,7 +207,7 @@ julia> U = (randn(10),randn(10))
 julia> banded_function_evals(mat_fun,U)
 ```
 """
-function banded_function_evals(mat_fun::Fxn, U, Fargs ...) where Fxn
+function banded_function_evals(mat_fun::Fxn,U,Fargs...) where Fxn
     n = length(first(U))
     Nfields = length(U)
     A = SMatrix{Nfields,Nfields}([spzeros(n,n) for i = 1:Nfields, j = 1:Nfields])
@@ -236,7 +220,7 @@ end
 
 Mutating version of [`banded_function_evals`](@ref).
 """
-function banded_function_evals!(A,mat_fun::Fxn, U, Fargs ...) where {Fxn}
+function banded_function_evals!(A,mat_fun::Fxn,U,Fargs...) where {Fxn}
     Nfields = size(A,2)
     num_pts = length(first(U))
 
