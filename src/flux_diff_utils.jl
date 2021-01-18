@@ -54,6 +54,10 @@ Inputs
 - `Fargs`: extra arguments to `F(ui,getindex.(Fargs,i)...,
                             uj,getindex.(Fargs,j)...)``
 - (optional) `skip_index(i,j)==true` skips computing fluxes for index (i,j)
+
+Since this sums over rows of matrices, this function may be slow for column-major
+and CSC matrices. If you are using column major/CSC storage, it will be faster to precompute
+transposes of `A_list` and pass them to [`hadamard_sum_ATr!`](@ref). 
 """
 function hadamard_sum(A_list,F::Fxn,u,Fargs...; skip_index=(i,j)->false) where {Fxn}
     rhs = zero.(u)
