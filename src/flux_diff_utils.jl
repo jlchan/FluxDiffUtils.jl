@@ -92,7 +92,7 @@ function hadamard_sum_ATr!(rhs,ATr_list,F::Fxn,u,Fargs...; skip_index=(i,j)->fal
             if skip_index(i,j)==false
                 uj = getindex.(u,j)
                 ATrij_list = getindex.(ATr_list,j,i)
-                Fij = F(ui,uj,getindex.(Fargs,i),getindex.(Fargs,j))
+                Fij = F(ui,uj,getindex.(Fargs,i)...,getindex.(Fargs,j)...)
                 val_i .+= sum(bmult.(ATrij_list,Fij))
             end
         end
@@ -175,7 +175,7 @@ function hadamard_jacobian!(A::SMatrix{N,N},A_list,hadamard_product_type::Symbol
            if skip_index(i,j)==false
                Ui = getindex.(U,i)
                A_ij_list = getindex.(A_list,i,j)
-               dFij = dF(Ui,getindex.(Fargs,i)...,Uj,getindex.(Fargs,j)...)
+               dFij = dF(Ui,Uj,getindex.(Fargs,i)...,getindex.(Fargs,j)...)
 
                for n = 1:length(U), m=1:length(U)
                    dFijQ = sum(bmult.(getindex.(dFij,m,n),A_ij_list)) # sum result for multiple operators
