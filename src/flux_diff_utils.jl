@@ -51,13 +51,12 @@ Inputs
 - `A_list`: tuple (or similar container) of operators (A1,...,Ad)
 - `F`: flux function which outputs a d-tuple of flux vectors
 - `u`: collection of solution values (or arrays) at which to evaluate `F`
-- `Fargs`: extra arguments to `F(ui,getindex.(Fargs,i)...,
-                            uj,getindex.(Fargs,j)...)``
+- `Fargs`: extra arguments to `F(ui,getindex.(Fargs,i)...,uj,getindex.(Fargs,j)...)`
 - (optional) `skip_index(i,j)==true` skips computing fluxes for index (i,j)
 
 Since this sums over rows of matrices, this function may be slow for column-major
-and CSC matrices. If you are using column major/CSC storage, it will be faster to precompute
-transposes of `A_list` and pass them to [`hadamard_sum_ATr!`](@ref). 
+and sparse CSC matrices. If you are using column major/CSC storage, it will be faster
+to precompute transposes of `A_list` and pass them to [`hadamard_sum_ATr!`](@ref).
 """
 function hadamard_sum(A_list,F::Fxn,u,Fargs...; skip_index=(i,j)->false) where {Fxn}
     rhs = zero.(u)
