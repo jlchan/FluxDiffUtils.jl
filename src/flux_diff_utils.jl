@@ -92,7 +92,7 @@ function hadamard_sum_ATr!(rhs,ATr_list,F::Fxn,u,Fargs...; skip_index=(i,j)->fal
             if skip_index(i,j)==false
                 uj = getindex.(u,j)
                 ATrij_list = getindex.(ATr_list,j,i)
-                Fij = F(ui,getindex.(Fargs,i)...,uj,getindex.(Fargs,j)...)
+                Fij = F(ui,uj,getindex.(Fargs,i),getindex.(Fargs,j))
                 val_i .+= sum(bmult.(ATrij_list,Fij))
             end
         end
