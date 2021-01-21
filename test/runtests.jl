@@ -1,10 +1,9 @@
+using LinearAlgebra
 using FluxDiffUtils
-using Test
-
+using ForwardDiff
 using SparseArrays
 using StaticArrays
-using LinearAlgebra
-using ForwardDiff
+using Test
 
 @testset "Flux diff tests" begin
     u = collect(LinRange(-1,1,10))
@@ -159,7 +158,7 @@ end
     @test sum(norm.(rhs_exact .- rhs2)) < tol
     @test sum(norm.(rhs1 .- rhs2)) < tol
 
-    # 2 flux test
+    # 2-component 2D flux test
     A,B = randn(N,N),randn(N,N)
     ATr_list = map(A->Matrix(transpose(A)),(A,B))
     function flux2(UL,UR)
@@ -169,10 +168,9 @@ end
     end
     u,v = (randn(N),randn(N))
     U = (u,v)
+
     # computes sum(A.*F1 + B.*F2,dims=2)
-    #rhs_exact = (sum(A,dims=2), sum(B,dims=2))
     rhs_exact = (A*u + u.*sum(A,dims=2),2*B*v + 2*v.*sum(B,dims=2))
-    # rhs_exact = (A*u + u.*sum(A,dims=2), B*v + v.*sum(B,dims=2))
     rhs1, rhs2 = zero.(U), zero.(U)
     hadamard_sum_ATr!(rhs1,ATr_list,flux2,U)
     hadamard_sum_ATr!(rhs2,sparse(ATr_list[1]),(uL,uR)->flux2(uL,uR)[1],U)
