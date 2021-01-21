@@ -19,10 +19,10 @@ using ForwardDiff
     A = randn(10,10)
     A[8:10,8:10] .= 0 # for testing skip_index
     skip_index(i,j) = (i>8)&&(j>8)
-    A = (A->A-A')(A) # make skew for exact formula testing
+    A = A-A' # make skew for exact formula testing
     ATr = (A->Matrix(transpose(A)))(A)
 
-    rhs = hadamard_sum((A,),tuple∘flux1D,U,skip_index = skip_index)
+    rhs = hadamard_sum((A,),tuple∘flux1D,U,skip_index=skip_index)
     @test (A*U[1] + U[1].*sum(A,dims=2)) ≈ 2*rhs[1]
     @test (A*U[2] + U[2].*sum(A,dims=2)) ≈ 2*rhs[2]
 end
@@ -123,4 +123,62 @@ end
 
     # test flattening of matrix
     @test blockcat(size(J,2),J) ≈ kron(I(3),first(A) - diagm(vec(sum(first(A),dims=1))))
+end
+
+@testset "Extra sparse/dense tests" begin
+    tol = 5e2*eps()
+    A,B = ntuple(x->sprandn(25,25,.1),2)
+    A_list = (A,B)
+    function flux2D(UL,UR)
+        uL,vL = UL
+        uR,vR = UR
+        return (uL+uR),2*(vL+vR)
+    end
+    U = randn(25),randn(25)
+    rhs_exact = (A*U[1] + U[1].*sum(A,dims=2), 2*B*U[2] + 2*U[2].*sum(B,dims=2))
+    rhs1 = zero.(U)
+    rhs2 = zero.(U)
+    hadamard_sum_ATr!(rhs1,A_list,flux2D,U)
+    hadamard_sum_ATr!(rhs2,Matrix.(A_list),flux2D,U) # dense version
+    @test sum(norm.(rhs1 .- rhs2)) < tol
+    tol = 5e2*eps()
+    N = 10
+
+    # scalar test
+    A = sparse(randn(N,N))
+    ATr_list = (Matrix(transpose(A)),)
+    function flux1(UL,UR)
+        return UL .+ UR
+    end
+    U = (randn(N),)
+    rhs_exact = (A*U[1] + U[1].*sum(A,dims=2),)
+    rhs1, rhs2 = zero.(U), zero.(U)
+    hadamard_sum_ATr!(rhs1, ATr_list,flux1,U)
+    hadamard_sum_ATr!(rhs2, sparse.(ATr_list),flux1,U)
+    @test sum(norm.(rhs1 .- rhs_exact)) < tol
+    @test sum(norm.(rhs_exact .- rhs2)) < tol
+    @test sum(norm.(rhs1 .- rhs2)) < tol
+
+    # 2 flux test
+    A,B = randn(N,N),randn(N,N)
+    ATr_list = map(A->Matrix(transpose(A)),(A,B))
+    function flux2(UL,UR)
+        uL,vL = UL
+        uR,vR = UR
+        return SVector{2}(uL+uR,0),SVector{2}(0,2*(vL+vR))
+    end
+    u,v = (randn(N),randn(N))
+    U = (u,v)
+    # computes sum(A.*F1 + B.*F2,dims=2)
+    #rhs_exact = (sum(A,dims=2), sum(B,dims=2))
+    rhs_exact = (A*u + u.*sum(A,dims=2),2*B*v + 2*v.*sum(B,dims=2))
+    # rhs_exact = (A*u + u.*sum(A,dims=2), B*v + v.*sum(B,dims=2))
+    rhs1, rhs2 = zero.(U), zero.(U)
+    hadamard_sum_ATr!(rhs1,ATr_list,flux2,U)
+    hadamard_sum_ATr!(rhs2,sparse(ATr_list[1]),(uL,uR)->flux2(uL,uR)[1],U)
+    hadamard_sum_ATr!(rhs2,sparse(ATr_list[2]),(uL,uR)->flux2(uL,uR)[2],U)
+
+    @test sum(norm.(rhs1 .- rhs_exact)) < tol
+    @test sum(norm.(rhs_exact .- rhs2)) < tol
+    @test sum(norm.(rhs1 .- rhs2)) < tol
 end
