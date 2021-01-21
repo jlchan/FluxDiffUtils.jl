@@ -1,0 +1,63 @@
+# This file is machine-generated - editing it directly is not advised
+
+[[EntropyStableEuler]]
+deps = ["StaticArrays", "UnPack"]
+git-tree-sha1 = "972fc5ea1327bc63c05458c023fabccc40f2c95c"
+repo-rev = "d71daa4e7c32fd93aed41f4938250846daf08b90"
+repo-url = "https://github.com/jlchan/EntropyStableEuler.jl"
+uuid = "afeafd78-3f85-4602-b848-ed3fb24127e1"
+version = "0.1.0"
+
+[[FluxDiffUtils]]
+deps = ["LinearAlgebra", "SparseArrays", "StaticArrays"]
+git-tree-sha1 = "75e3ab4b10a291d78ffb055af6b55108757b02a7"
+repo-rev = "31d44eea6174b658e2e249c1491af83c83905caa"
+repo-url = "https://github.com/jlchan/FluxDiffUtils.jl.git"
+uuid = "61bfa2bf-ac51-4dc3-9c62-6a5180432d13"
+version = "0.1.1"
+
+[[Libdl]]
+uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+
+[[LinearAlgebra]]
+deps = ["Libdl"]
+uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+
+[[Printf]]
+deps = ["Unicode"]
+uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[[Random]]
+deps = ["Serialization"]
+uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[[Serialization]]
+uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+
+[[SparseArrays]]
+deps = ["LinearAlgebra", "Random"]
+uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[[StaticArrays]]
+deps = ["LinearAlgebra", "Random", "Statistics"]
+git-tree-sha1 = "9da72ed50e94dbff92036da395275ed114e04d49"
+uuid = "90137ffa-7385-5640-81b9-e52037218182"
+version = "1.0.1"
+
+[[Statistics]]
+deps = ["LinearAlgebra", "SparseArrays"]
+uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[[TimerOutputs]]
+deps = ["Printf"]
+git-tree-sha1 = "3318281dd4121ecf9713ce1383b9ace7d7476fdd"
+uuid = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
+version = "0.5.7"
+
+[[UnPack]]
+git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
+uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+version = "1.0.2"
+
+[[Unicode]]
+uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
