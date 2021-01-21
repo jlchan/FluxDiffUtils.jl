@@ -42,7 +42,7 @@ Same as [`hadamard_sum!`](@ref) but `ATr_list` contains transposed matrices.
 Specializes based on whether `ATr_list` contains SparseMatrixCSC or general arrays.
 SparseMatrixCSC works best if all matrices in `ATr_list` have distinct sparsity patterns.
 """
-function hadamard_sum_ATr!(rhs,ATr_list,F,u,Fargs...; skip_index=(i,j)->false)
+function hadamard_sum_ATr!(rhs,ATr_list,F::Fxn,u,Fargs...; skip_index=(i,j)->false) where {Fxn}
     rhstype = eltype(first(rhs))
     val_i = zeros(rhstype,length(rhs))
     rows,cols = axes(first(ATr_list))
