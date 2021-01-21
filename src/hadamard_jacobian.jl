@@ -35,9 +35,11 @@ end
 
 function scale_factor(hadamard_product_type::Symbol)
     if hadamard_product_type == :sym
-        return I
+        return 1.0I
     elseif hadamard_product_type == :skew
-        return -I
+        return -1.0I
+    else
+        error("Hadamard product type not :sym or :skew")
     end
 end
 
@@ -68,13 +70,13 @@ function hadamard_jacobian(A_list,dF::Fxn,U,Fargs...;skip_index=(i,j)->false) wh
            hadamard_jacobian(Askew_list,:skew,dF,U,Fargs...;skip_index=skip_index)
            )
 end
+
 function hadamard_jacobian(A_list,hadamard_product_type,dF::Fxn,U,Fargs...;
                            skip_index=(i,j)->false) where {N,Fxn}
     Nfields = length(U)
     # sum(A_list) = sparse matrix with union of A[i] entries
     A = SMatrix{Nfields,Nfields}([zero(first(A_list)) for i=1:Nfields, j=1:Nfields])
-    hadamard_jacobian!(A, A_list, hadamard_product_type, dF, U,
-                       Fargs...; skip_index=skip_index)
+    hadamard_jacobian!(A, A_list, hadamard_product_type, dF, U, Fargs...; skip_index=skip_index)
     return A
 end
 
@@ -119,8 +121,8 @@ function hadamard_jacobian!(A::SMatrix{N,N},A_list,hadamard_product_type::Symbol
 end
 
 function hadamard_jacobian!(A::SMatrix{N,N},A_list::NTuple{D,SparseMatrixCSC},
-                            hadamard_product_type::Symbol,dF,U,Fargs...;
-                            skip_index=(i,j)->false) where {N,D}
+                            hadamard_product_type::Symbol,dF::Fxn,U,Fargs...;
+                            skip_index=(i,j)->false) where {N,D,Fxn}
     for (i,Ai) in enumerate(A_list)
         dF_i = (x->getindex(x,i))∘dF
         hadamard_jacobian!(A,Ai,hadamard_product_type,dF_i,U,Fargs...)
@@ -128,7 +130,7 @@ function hadamard_jacobian!(A::SMatrix{N,N},A_list::NTuple{D,SparseMatrixCSC},
 end
 
 function hadamard_jacobian!(A::SMatrix{N,N},Amat::SparseMatrixCSC,
-                            hadamard_product_type::Symbol,dF,U,Fargs...) where {N}
+                            hadamard_product_type::Symbol,dF::Fxn,U,Fargs...) where {N,Fxn}
     Nfields = length(U)
 
     rows = rowvals(Amat)
