@@ -1,10 +1,10 @@
 # helper functions
 bmult(a,b) = a.*b # broadcasted multiplication
 
-# hadamard function matrix utilities
-row_range(j,A_list::NTuple{N,AbstractArray}) where {N} = axes(first(A_list),1)
-row_range(j,A_list::NTuple{N,SparseMatrixCSC}) where {N} =
-    union(getindex.(rowvals.(A_list),nzrange.(A_list, j))...)
+# # hadamard function matrix utilities
+# row_range(j,A_list::NTuple{N,AbstractArray}) where {N} = axes(first(A_list),1)
+# row_range(j,A_list::NTuple{N,SparseMatrixCSC}) where {N} =
+#     union(getindex.(rowvals.(A_list),nzrange.(A_list, j))...)
 
 #####
 ##### routine works for both dense/sparse matrix routines
@@ -62,14 +62,14 @@ function hadamard_sum_ATr!(rhs,ATr_list,F,u,Fargs...; skip_index=(i,j)->false)
     end
 end
 
-function hadamard_sum_ATr!(rhs,ATr_list::NTuple{N,SparseMatrixCSC},F,u,Fargs...) where {N}
+function hadamard_sum_ATr!(rhs,ATr_list::NTuple{N,SparseMatrixCSC},F::Fxn,u,Fargs...) where {N,Fxn}
     for (i,ATr) in enumerate(ATr_list)
         F_i = (x->getindex(x,i)) ∘ F
         hadamard_sum_ATr!(rhs,ATr,F_i,u,Fargs...)
     end
 end
 
-function hadamard_sum_ATr!(rhs,ATr::SparseMatrixCSC,F,u,Fargs...)
+function hadamard_sum_ATr!(rhs,ATr::SparseMatrixCSC,F::Fxn,u,Fargs...) where {Fxn}
     rhstype = eltype(first(rhs))
     val_i = zeros(rhstype,length(rhs))
     rows = rowvals(ATr)
