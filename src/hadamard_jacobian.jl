@@ -34,12 +34,10 @@ end
 #####
 
 function scale_factor(hadamard_product_type::Symbol)
-    if hadamard_product_type == :sym
-        return 1.0I
-    elseif hadamard_product_type == :skew
+    if hadamard_product_type == :skew
         return -1.0I
     else
-        error("Hadamard product type not :sym or :skew")
+        return 1.0I
     end
 end
 
@@ -72,9 +70,8 @@ function hadamard_jacobian(A_list,dF::Fxn,U,Fargs...;skip_index=(i,j)->false) wh
 end
 
 function hadamard_jacobian(A_list,hadamard_product_type,dF::Fxn,U,Fargs...;
-                           skip_index=(i,j)->false) where {N,Fxn}
+                           skip_index=(i,j)->false) where {Fxn}
     Nfields = length(U)
-    # sum(A_list) = sparse matrix with union of A[i] entries
     A = SMatrix{Nfields,Nfields}([zero(first(A_list)) for i=1:Nfields, j=1:Nfields])
     hadamard_jacobian!(A, A_list, hadamard_product_type, dF, U, Fargs...; skip_index=skip_index)
     return A
@@ -87,18 +84,19 @@ end
 Mutating version of [`hadamard_jacobian`](@ref). `A` = matrix for storing Jacobian
 output, with each entry storing a block of the Jacobian.
 """
-function hadamard_jacobian!(A::SMatrix{N,N},A_list,hadamard_product_type::Symbol,
-                            dF,U,Fargs...; skip_index=(i,j)->false) where {N}
-    Nfields = length(U)
+function hadamard_jacobian!(A::SMatrix{Nfields,Nfields},A_list,hadamard_product_type::Symbol,
+                            dF::Fxn,U,Fargs...; skip_index=(i,j)->false) where {Fxn,Nfields}
+
     rows,cols = axes(first(A_list))
 
     # accumulator for sum(Q.*dF,1) over jth column
-    dFaccum = zeros(eltype(first(A_list)),Nfields,Nfields)
+    Atype = eltype(first(A_list))
+    dFaccum = zeros(Atype,Nfields,Nfields)
 
     # loop over cols + non-zero ids
     for j in cols
        Uj = getindex.(U,j)
-       fill!(dFaccum,zero(eltype(first(A_list))))
+       fill!(dFaccum,zero(Atype))
        for i in rows
            if skip_index(i,j)==false
                Ui = getindex.(U,i)
