@@ -1,11 +1,6 @@
 # helper functions
 bmult(a,b) = a.*b # broadcasted multiplication
 
-# # hadamard function matrix utilities
-# row_range(j,A_list::NTuple{N,AbstractArray}) where {N} = axes(first(A_list),1)
-# row_range(j,A_list::NTuple{N,SparseMatrixCSC}) where {N} =
-#     union(getindex.(rowvals.(A_list),nzrange.(A_list, j))...)
-
 #####
 ##### routine works for both dense/sparse matrix routines
 #####
@@ -40,7 +35,7 @@ end
 
 Same as [`hadamard_sum!`](@ref) but `ATr_list` contains transposed matrices.
 Specializes based on whether `ATr_list` contains SparseMatrixCSC or general arrays.
-SparseMatrixCSC works best if all matrices in `ATr_list` have distinct sparsity patterns.
+SparseMatrixCSC works best if the matrices in `ATr_list` have distinct sparsity patterns.
 """
 function hadamard_sum_ATr!(rhs,ATr_list,F::Fxn,u,Fargs...; skip_index=(i,j)->false) where {Fxn}
     rhstype = eltype(first(rhs))
@@ -70,19 +65,45 @@ function hadamard_sum_ATr!(rhs,ATr_list::NTuple{N,SparseMatrixCSC},F::Fxn,u,Farg
 end
 
 function hadamard_sum_ATr!(rhs,ATr::SparseMatrixCSC,F::Fxn,u,Fargs...) where {Fxn}
-    rhstype = eltype(first(rhs))
-    val_i = zeros(rhstype,length(rhs))
+    val_i = zeros(eltype(first(rhs)),length(rhs))
     rows = rowvals(ATr)
     vals = nonzeros(ATr)
     for i = 1:size(ATr,2) # all ops should be same length
         ui = getindex.(u,i)
-        # fill!(val_i,zero(rhstype))
         val_i .= getindex.(rhs,i) # accumulate into existing rhs
         Fargs_i = getindex.(Fargs,i)
         for row_id in nzrange(ATr,i)
             j = rows[row_id]
             uj = getindex.(u,j)
             Fij = F(ui,uj,Fargs_i...,getindex.(Fargs,j)...)
+            val_i .+= vals[row_id].*Fij
+        end
+        setindex!.(rhs,val_i,i)
+    end
+end
+
+"""
+    TupleOrSVector{N}
+
+Either a NTuple or SVector (e.g., fast static container) of length N.
+"""
+const TupleOrSVector{N} = Union{NTuple{N,T},SVector{N,T}} where {T}
+
+"""
+    hadamard_sum_ATr!(rhs::NTupleOrSVector{N},ATr::SparseMatrixCSC,F::Fxn,u,Fargs...) where {N,Fxn}
+
+Zero-allocation version if rhs has a statically inferrable length (e.g., is an NTuple or SVector)
+"""
+function hadamard_sum_ATr!(rhs::TupleOrSVector{N},ATr::SparseMatrixCSC,F::Fxn,u,Fargs...) where {N,Fxn}
+    rows = rowvals(ATr)
+    vals = nonzeros(ATr)
+    for i = 1:size(ATr,2) # all ops should be same length
+        ui = getindex.(u,i)
+        val_i = MVector{N}(getindex.(rhs,i)) # accumulate into existing rhs
+        for row_id in nzrange(ATr,i)
+            j = rows[row_id]
+            uj = getindex.(u,j)
+            Fij = F(ui,uj,getindex.(Fargs,i)...,getindex.(Fargs,j)...)
             val_i .+= vals[row_id].*Fij
         end
         setindex!.(rhs,val_i,i)
