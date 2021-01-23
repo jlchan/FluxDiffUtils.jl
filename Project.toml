@@ -1,7 +1,7 @@
 name = "FluxDiffUtils"
 uuid = "61bfa2bf-ac51-4dc3-9c62-6a5180432d13"
 authors = ["Jesse Chan", "Christina Taylor"]
-version = "0.1.1"
+version = "0.2.0"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
