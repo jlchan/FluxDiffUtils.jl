@@ -91,11 +91,12 @@ function hadamard_jacobian!(A::SMatrix{Nfields,Nfields},A_list,hadamard_product_
 
     # accumulator for sum(Q.*dF,1) over jth column
     Atype = eltype(first(A_list))
-    dFaccum = zeros(Atype,Nfields,Nfields)
+    dFaccum = MMatrix{Nfields,Nfields}(zeros(Atype,Nfields,Nfields))
 
     # loop over cols + non-zero ids
     for j in cols
        Uj = getindex.(U,j)
+
        fill!(dFaccum,zero(Atype))
        for i in rows
            if skip_index(i,j)==false
@@ -103,8 +104,8 @@ function hadamard_jacobian!(A::SMatrix{Nfields,Nfields},A_list,hadamard_product_
                A_ij_list = getindex.(A_list,i,j)
                dFij = dF(Ui,Uj,getindex.(Fargs,i)...,getindex.(Fargs,j)...)
 
-               for n = 1:length(U), m=1:length(U)
-                   dFijQ = sum(bmult.(getindex.(dFij,m,n),A_ij_list)) # sum result for multiple operators
+               @inbounds for n = 1:Nfields, m=1:Nfields
+                   dFijQ = sum(map((x,y)->x.*y,getindex.(dFij,m,n),A_ij_list)) # sum result for multiple operators
                    A[m,n][i,j] += dFijQ
                    dFaccum[m,n] += dFijQ # accumulate column sums on-the-fly
                end
@@ -112,7 +113,7 @@ function hadamard_jacobian!(A::SMatrix{Nfields,Nfields},A_list,hadamard_product_
        end
 
        # add diagonal entry for each block
-       for n=1:Nfields, m=1:Nfields
+       @inbounds for n=1:Nfields, m=1:Nfields
            A[m,n][j,j] += scale_factor(hadamard_product_type)*dFaccum[m,n]
        end
     end
@@ -127,20 +128,20 @@ function hadamard_jacobian!(A::SMatrix{N,N},A_list::NTuple{D,SparseMatrixCSC},
     end
 end
 
-function hadamard_jacobian!(A::SMatrix{N,N},Amat::SparseMatrixCSC,
-                            hadamard_product_type::Symbol,dF::Fxn,U,Fargs...) where {N,Fxn}
-    Nfields = length(U)
+function hadamard_jacobian!(A::SMatrix{Nfields,Nfields},Amat::SparseMatrixCSC,
+                            hadamard_product_type::Symbol,dF::Fxn,U,Fargs...) where {Nfields,Fxn}
 
     rows = rowvals(Amat)
     vals = nonzeros(Amat)
 
     # accumulator for sum(Q.*dF,1) over jth column
-    dFaccum = zeros(eltype(Amat),Nfields,Nfields)
+    Atype = eltype(Amat)
+    dFaccum = MMatrix{Nfields,Nfields}(zeros(Atype,Nfields,Nfields))
 
     # loop over cols + non-zero ids
     for j = 1:size(Amat,2)
        Uj = getindex.(U,j)
-       fill!(dFaccum,zero(eltype(Amat)))
+       fill!(dFaccum,zero(Atype))
        for row_id in nzrange(Amat,j)
            i = rows[row_id]
            A_ij = vals[row_id]
@@ -148,7 +149,7 @@ function hadamard_jacobian!(A::SMatrix{N,N},Amat::SparseMatrixCSC,
            Ui = getindex.(U,i)
            dFij = dF(Ui,Uj,getindex.(Fargs,i)...,getindex.(Fargs,j)...)
 
-           for n = 1:length(U), m=1:length(U)
+           @inbounds for n = 1:Nfields, m=1:Nfields
                dFijQ = dFij[m,n].*A_ij # sum result for single op
                A[m,n][i,j] += dFijQ
                dFaccum[m,n] += dFijQ # accumulate column sums on-the-fly
@@ -156,7 +157,7 @@ function hadamard_jacobian!(A::SMatrix{N,N},Amat::SparseMatrixCSC,
        end
 
        # add diagonal entry for each block
-       for n=1:Nfields, m=1:Nfields
+       @inbounds for n=1:Nfields, m=1:Nfields
            A[m,n][j,j] += scale_factor(hadamard_product_type)*dFaccum[m,n]
        end
     end
