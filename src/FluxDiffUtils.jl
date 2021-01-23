@@ -5,7 +5,7 @@ using SparseArrays
 using StaticArrays
 
 # flux differencing routines
-export hadamard_sum, hadamard_sum!, hadamard_sum_ATr!
+export hadamard_sum, hadamard_sum_ATr!
 include("hadamard_sum.jl")
 
 # flux differencing jacobian matrix routines
