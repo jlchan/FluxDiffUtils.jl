@@ -83,8 +83,9 @@ end
     hadamard_jacobian(A_list, hadamard_product_type, dF::Fxn, U, ::Val{Nfields},
                       Fargs...; skip_index=(i,j)->false) where {N,Fxn}
 
-Version with static type information `Nfields` passed in.
+Version with static information `Nfields` as a value-type argument.
 
+# Example
 ```julia
 julia> hadamard_jacobian(A_list, dF, U, Val(4)) # Nfields = 4
 ```
