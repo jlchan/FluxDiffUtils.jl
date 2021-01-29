@@ -4,6 +4,14 @@ using LinearAlgebra
 using SparseArrays
 using StaticArrays
 
+"""
+    TupleOrSVector{N}
+
+Either a NTuple or SVector (e.g., fast static container) of length N.
+"""
+const TupleOrSVector{N} = Union{NTuple{N,T},SVector{N,T}} where {T}
+
+
 # flux differencing routines
 export hadamard_sum, hadamard_sum_ATr!
 include("hadamard_sum.jl")

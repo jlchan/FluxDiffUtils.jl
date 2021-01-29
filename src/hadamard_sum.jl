@@ -1,10 +1,3 @@
-"""
-    TupleOrSVector{N}
-
-Either a NTuple or SVector (e.g., fast static container) of length N.
-"""
-const TupleOrSVector{N} = Union{NTuple{N,T},SVector{N,T}} where {T}
-
 #####
 ##### routine works for both dense/sparse matrix routines
 #####
@@ -48,12 +41,13 @@ function hadamard_sum_ATr!(rhs,ATr_list,F::Fxn,u,Fargs...; skip_index=(i,j)->fal
     rows,cols = axes(first(ATr_list))
     for i in cols
         ui = getindex.(u,i)
+        Fargs_i = getindex.(Fargs,i)
         val_i .= getindex.(rhs,i)
         for j in rows
             if skip_index(i,j)==false
                 uj = getindex.(u,j)
                 ATrij_list = getindex.(ATr_list,j,i)
-                Fij = F(ui,uj,getindex.(Fargs,i)...,getindex.(Fargs,j)...)
+                Fij = F(ui,uj,Fargs_i...,getindex.(Fargs,j)...)
                 val_i .+= sum(map((x,y)->x.*y,ATrij_list,Fij))
             end
         end
@@ -100,28 +94,31 @@ function hadamard_sum_ATr!(rhs::TupleOrSVector{N},ATr_list::NTuple{D,Array},F::F
     rows,cols = axes(first(ATr_list))
     for i in cols
         ui = getindex.(u,i)
+        Fargs_i = getindex.(Fargs,i)
         val_i = MVector{N}(getindex.(rhs,i)) # accumulate into existing rhs
         for j in rows
             if skip_index(i,j)==false
                 uj = getindex.(u,j)
                 ATrij_list = getindex.(ATr_list,j,i)
-                Fij = F(ui,uj,getindex.(Fargs,i)...,getindex.(Fargs,j)...)
+                Fij = F(ui,uj,Fargs_i...,getindex.(Fargs,j)...)
                 val_i .+= sum(map((x,y)->x.*y,ATrij_list,Fij))
             end
         end
         setindex!.(rhs,val_i,i)
     end
 end
+
 function hadamard_sum_ATr!(rhs::TupleOrSVector{N},ATr::SparseMatrixCSC,F::Fxn,u,Fargs...) where {N,Fxn}
     rows = rowvals(ATr)
     vals = nonzeros(ATr)
     for i = 1:size(ATr,2)
         ui = getindex.(u,i)
+        Fargs_i = getindex.(Fargs,i)
         val_i = MVector{N}(getindex.(rhs,i)) # accumulate into existing rhs
         for row_id in nzrange(ATr,i)
             j = rows[row_id]
             uj = getindex.(u,j)
-            Fij = F(ui,uj,getindex.(Fargs,i)...,getindex.(Fargs,j)...)
+            Fij = F(ui,uj,Fargs_i...,getindex.(Fargs,j)...)
             val_i .+= vals[row_id].*Fij
         end
         setindex!.(rhs,val_i,i)

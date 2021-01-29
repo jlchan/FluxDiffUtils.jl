@@ -78,6 +78,37 @@ function hadamard_jacobian(A_list,hadamard_product_type,dF::Fxn,U,Fargs...;
 end
 
 """
+    hadamard_jacobian(A_list, dF::Fxn, U, ::Val{Nfields}, Fargs...;
+                      skip_index=(i,j)->false) where {N,Nfields, Fxn}
+    hadamard_jacobian(A_list, hadamard_product_type, dF::Fxn, U, ::Val{Nfields},
+                      Fargs...; skip_index=(i,j)->false) where {N,Fxn}
+
+Version with static type information `Nfields` passed in.
+
+```julia
+julia> hadamard_jacobian(A_list, dF, U, Val(4)) # Nfields = 4
+```
+"""
+function hadamard_jacobian(A_list,dF::Fxn,U,::Val{Nfields},Fargs...;
+                           skip_index=(i,j)->false) where {N,Nfields,Fxn}
+
+    # make symmetric and skew parts, call jacobian on each part
+    Asym_list  = (A->.5*(A+A')).(A_list)
+    Askew_list = (A->.5*(A-A')).(A_list)
+    return ((x,y)->x .+ y).(
+           hadamard_jacobian(Asym_list,:sym,dF,U,Val(Nfields),Fargs...;skip_index=skip_index),
+           hadamard_jacobian(Askew_list,:skew,dF,U,Val(Nfields),Fargs...;skip_index=skip_index)
+           )
+end
+
+function hadamard_jacobian(A_list,hadamard_product_type,dF::Fxn,U,::Val{Nfields},Fargs...;
+                           skip_index=(i,j)->false) where {Nfields,Fxn}
+    A = SMatrix{Nfields,Nfields}([zero(first(A_list)) for i=1:Nfields, j=1:Nfields])
+    hadamard_jacobian!(A, A_list, hadamard_product_type, dF, U, Fargs...; skip_index=skip_index)
+    return A
+end
+
+"""
     hadamard_jacobian!(A::SMatrix{N,N},A_list,hadamard_product_type::Symbol,
                        dF::Fxn,U,Fargs...; skip_index=(i,j)->false) where {N,Nd,Fxn}
 
