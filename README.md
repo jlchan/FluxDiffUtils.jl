@@ -1,3 +1,5 @@
+# This repository is no longer maintained; please see StartUpDG.jl or Trixi.jl for my current Julia-based DG codes.
+
 # FluxDiffUtils
 [![Docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://jlchan.github.io/FluxDiffUtils.jl/stable)
 [![Docs-dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://jlchan.github.io/FluxDiffUtils.jl/dev)
